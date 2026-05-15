@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Vibe Coding for EML | TESPA 2026</title>
+<script>
+/* ============ 前端防禦：Domain Lock + Iframe Busting ============ */
+(function(){
+  const ALLOWED = ['lolopodcast.github.io','localhost','127.0.0.1',''];
+  const REDIRECT = 'https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo';
+  const host = location.hostname;
+  if (host && !ALLOWED.some(d => host === d || host.endsWith('.'+d))) {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.innerHTML = '<div style="text-align:center;padding:60px;font-family:sans-serif"><h1>Access Denied</h1><p>This resource is not authorised on this domain.</p></div>';
+      setTimeout(() => location.href = REDIRECT, 3000);
+    });
+    return;
+  }
+  if (window.self !== window.top) {
+    try { window.top.location.href = window.self.location.href; }
+    catch(e) { document.addEventListener('DOMContentLoaded', () => { document.body.innerHTML = '<div style="text-align:center;padding:60px"><h1>Frame Blocked</h1><p>This content cannot be embedded.</p></div>'; }); }
+  }
+})();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], serif: ['Merriweather','serif'] } } }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+  ::selection { background: #004030; color: #fff; }
+  .dark ::selection { background: #D8C3A5; color: #004030; }
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(15px)} to{opacity:1;transform:translateY(0)} }
+  .animate-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+  .perspective { perspective: 1000px; }
+  .transform-style-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .rotate-y-180 { transform: rotateY(180deg); }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  .dark ::-webkit-scrollbar-thumb { background: #475569; }
+  /* 僅 UI 裝飾禁選取，教學內容保留 */
+  header, footer, button, [role="button"], .ui-decoration { -webkit-user-select: none; user-select: none; }
+  input, textarea, select { -webkit-user-select: text; user-select: text; }
+  /* Copyright toast */
+  .cr-toast {
+    position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
+    background: rgba(0,64,48,0.95); color: #D8C3A5; padding: 12px 24px;
+    border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    animation: fadeInUp 0.3s ease-out; max-width: 90vw; text-align: center;
+  }
+</style>
+</head>
+<body class="bg-[#f4f4f4] dark:bg-[#121212] selection:bg-[#004030] selection:text-white dark:selection:bg-[#D8C3A5] dark:selection:text-[#004030]">
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+/* ============================================================
+   AI Vibe Coding for EML — Interactive Learning SPA
+   Prof. Shihmin Lo · NCNU IBS · TESPA 2026/05/15
+   ============================================================ */
+
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ============ 答案混淆 ============ */
+const _SALT = 'AIVC2026';
+const _e = (s, n) => {
+  const p = s + ':' + n;
+  let r = '';
+  for (let i = 0; i < p.length; i++)
+    r += String.fromCharCode(p.charCodeAt(i) ^ ((i + 7) * 3 & 0xFF));
+  return btoa(r);
+};
+const _d = (token) => {
+  const decoded = atob(token);
+  let r = '';
+  for (let i = 0; i < decoded.length; i++)
+    r += String.fromCharCode(decoded.charCodeAt(i) ^ ((i + 7) * 3 & 0xFF));
+  return parseInt(r.split(':')[1], 10);
+};
+const _A0 = _e(_SALT, 0), _A1 = _e(_SALT, 1), _A2 = _e(_SALT, 2), _A3 = _e(_SALT, 3);
+
+/* ============ 模組數量常數 ============ */
+const NUM_LEARN = 6;
+const TOTAL = 1 + NUM_LEARN + 3;
+const IDX_LAB = NUM_LEARN + 1;
+const IDX_RES = NUM_LEARN + 2;
+const IDX_ANA = NUM_LEARN + 3;
+
+/* ============ Copyright Toast ============ */
+const COPYRIGHT_MSG_EN = 'Intellectual Property of Prof. Shihmin Lo';
+const COPYRIGHT_MSG_ZH = '本教材為駱世民教授智慧財產';
+let _toastTimer = null;
+const showCopyrightToast = (lang) => {
+  let el = document.getElementById('cr-toast');
+  if (el) { el.remove(); clearTimeout(_toastTimer); }
+  el = document.createElement('div');
+  el.id = 'cr-toast';
+  el.className = 'cr-toast';
+  el.textContent = lang === 'zh' ? COPYRIGHT_MSG_ZH : COPYRIGHT_MSG_EN;
+  document.body.appendChild(el);
+  _toastTimer = setTimeout(() => { if (el) el.remove(); }, 2000);
+};
+
+/* ============ 智慧型右鍵與快捷鍵攔截 ============ */
+if (typeof window !== 'undefined' && !window._aivcDefenseInit) {
+  window._aivcDefenseInit = true;
+  const getLang = () => (window._aivcLang || 'en');
+  document.addEventListener('contextmenu', e => {
+    const selection = window.getSelection().toString().trim();
+    const isImage = e.target.tagName === 'IMG' || e.target.closest('svg');
+    if (selection.length > 0) return true;
+    if (isImage) { e.preventDefault(); showCopyrightToast(getLang()); return; }
+    e.preventDefault();
+    showCopyrightToast(getLang());
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F12') { e.preventDefault(); showCopyrightToast(getLang()); return; }
+    if (e.ctrlKey && e.key.toLowerCase() === 'u') { e.preventDefault(); showCopyrightToast(getLang()); return; }
+    if (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) { e.preventDefault(); showCopyrightToast(getLang()); return; }
+  });
+  document.addEventListener('dragstart', e => {
+    if (e.target.tagName === 'IMG' || e.target.closest('svg')) e.preventDefault();
+  });
+}
+
+/* ============ 輸入淨化 ============ */
+const sanitizeStudentId = (v) => String(v).replace(/[^0-9]/g, '').slice(0, 12);
+const sanitizeName = (v) => String(v).replace(/[<>"'&\\]/g, '').slice(0, 50);
+
+/* ============ Icons ============ */
+const IconBookOpen = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+const IconAlertTriangle = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+const IconCheckCircle = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+const IconGlobe = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
+const IconChevronRight = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>;
+const IconChevronUp = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>;
+const IconMenu = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+const IconX = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+const IconMoon = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+const IconSun = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+const IconPlay = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>;
+const IconPause = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>;
+const IconSquare = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16"/></svg>;
+const IconArrowRight = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+const IconActivity = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+const IconCpu = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>;
+const IconTrendingUp = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
+const IconLayers = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
+const IconFlag = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>;
+const IconZap = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+const IconFlask = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="7" y1="13" x2="17" y2="13"/></svg>;
+const IconZapLab = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2"/><path d="M11 14l-1.5 3h3L11 20"/></svg>;
+const IconHome = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const IconUsers = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+const IconCode = ({size=20}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>;
+
+/* ============ FlipCardDeck ============ */
+const FlipCardDeck = ({ terms, t, moduleId, onCardRead }) => {
+  const [groupIdx, setGroupIdx] = useState(0);
+  const [flipped, setFlipped] = useState({});
+  const [readSet, setReadSet] = useState(new Set());
+  const [shownSet, setShownSet] = useState(new Set());
+
+  const [shuffledOrder] = useState(() =>
+    [...Array(terms.length).keys()].sort(() => Math.random() - 0.5)
+  );
+
+  const groupSize = 2;
+  const totalGroups = Math.ceil(terms.length / groupSize);
+  const startIdx = groupIdx * groupSize;
+  const currentCardIndices = shuffledOrder.slice(startIdx, startIdx + groupSize);
+
+  useEffect(() => {
+    const newShown = new Set(shownSet);
+    currentCardIndices.forEach(idx => newShown.add(idx));
+    if (newShown.size !== shownSet.size) setShownSet(newShown);
+  }, [groupIdx]);
+
+  const handleFlip = (origIdx) => {
+    setFlipped(f => ({ ...f, [origIdx]: !f[origIdx] }));
+    if (!readSet.has(origIdx)) {
+      const newRead = new Set(readSet); newRead.add(origIdx); setReadSet(newRead);
+      if (onCardRead) onCardRead(moduleId, newRead.size, shownSet.size, terms.length);
+    }
+  };
+
+  const statusText = t.flip_status
+    .replace('{read}', readSet.size).replace('{shown}', shownSet.size).replace('{total}', terms.length);
+
+  return (
+    <div className="mt-8">
+      <h3 className="text-lg font-bold uppercase tracking-wider text-slate-500 mb-2">{t.key_terms}</h3>
+      <p className="text-sm text-slate-400 mb-4">{statusText}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {currentCardIndices.map((origIdx) => {
+          const term = terms[origIdx];
+          return (
+            <div key={origIdx} className="perspective cursor-pointer h-36" onClick={() => handleFlip(origIdx)}>
+              <div className={`transform-style-3d relative w-full h-full transition-transform duration-500 ${flipped[origIdx] ? 'rotate-y-180' : ''}`}>
+                <div className="backface-hidden absolute inset-0 bg-white dark:bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <p className="font-serif font-bold text-center text-[#004030] dark:text-[#D8C3A5]">{term.front}</p>
+                  <p className="text-xs text-slate-400 mt-2">{t.flip_prompt}</p>
+                </div>
+                <div className="backface-hidden rotate-y-180 absolute inset-0 bg-[#004030] dark:bg-slate-700 rounded-xl p-4 flex items-center justify-center">
+                  <p className="text-sm text-center text-[#D8C3A5] dark:text-slate-200 leading-relaxed">{term.back}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-3 mt-4">
+        <button onClick={() => { setGroupIdx(0); setFlipped({}); }}
+          className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+          {t.flip_retry}
+        </button>
+        <button onClick={() => groupIdx < totalGroups-1 && setGroupIdx(groupIdx+1)}
+          disabled={groupIdx >= totalGroups-1}
+          className="px-4 py-2 text-sm bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg disabled:opacity-40">
+          {t.flip_next}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ ModuleQuiz ============ */
+const ModuleQuiz = ({ questions, t, moduleId, onQuizSubmit, moduleName }) => {
+  const [selected, setSelected] = useState({});
+  const [submitted, setSubmitted] = useState({});
+  const [groupIdx, setGroupIdx] = useState(0);
+  const groupSize = 2;
+
+  const [quizIndices] = useState(() =>
+    [...Array(questions.length).keys()].sort(() => Math.random() - 0.5)
+  );
+  const totalGroups = Math.ceil(quizIndices.length / groupSize);
+
+  const [shuffledMaps] = useState(() =>
+    quizIndices.map(qIdx => {
+      const n = questions[qIdx].opts.length;
+      return [...Array(n).keys()].sort(() => Math.random() - 0.5);
+    })
+  );
+
+  const totalAnswered = Object.keys(selected).length;
+  const computeCorrect = () => {
+    let c = 0;
+    quizIndices.forEach((qIdx, qi) => {
+      if (selected[qi] === undefined) return;
+      if (shuffledMaps[qi][selected[qi]] === _d(questions[qIdx].ans)) c++;
+    });
+    return c;
+  };
+  const statusText = t.quiz_status
+    .replace('{correct}', computeCorrect())
+    .replace('{answered}', totalAnswered)
+    .replace('{total}', quizIndices.length);
+
+  const currentStart = groupIdx * groupSize;
+  const currentIndices = quizIndices.slice(currentStart, currentStart + groupSize);
+
+  const handleGroupSubmit = () => {
+    const allDone = currentIndices.every((_, i) => selected[currentStart + i] !== undefined);
+    if (!allDone) return;
+    setSubmitted(s => ({ ...s, [groupIdx]: true }));
+    if (groupIdx === totalGroups - 1 || Object.keys(submitted).length + 1 === totalGroups) {
+      const wrongQs = [];
+      let correct = 0;
+      quizIndices.forEach((qIdx, qi) => {
+        if (selected[qi] === undefined) return;
+        if (shuffledMaps[qi][selected[qi]] === _d(questions[qIdx].ans)) correct++;
+        else wrongQs.push(questions[qIdx].q);
+      });
+      onQuizSubmit(moduleId, correct, quizIndices.length, wrongQs, moduleName);
+    }
+  };
+
+  return (
+    <div className="mt-8 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+      <h3 className="text-lg font-bold font-serif text-[#004030] dark:text-[#D8C3A5] mb-2">{t.quiz_title}</h3>
+      <p className="text-sm text-slate-400 mb-6">{statusText}</p>
+      {currentIndices.map((qIdx, localI) => {
+        const qi = currentStart + localI;
+        const q = questions[qIdx];
+        const sMap = shuffledMaps[qi];
+        const isGrpSub = !!submitted[groupIdx];
+        return (
+          <div key={qIdx} className="mb-6">
+            <p className="font-bold mb-3">{qi+1}. {q.q}</p>
+            <div className="space-y-2">
+              {sMap.map((origIdx, dIdx) => {
+                const isCorrect = origIdx === _d(q.ans);
+                const isSel = selected[qi] === dIdx;
+                return (
+                  <button key={dIdx} onClick={() => !isGrpSub && setSelected(s => ({...s, [qi]: dIdx}))}
+                    className={`w-full text-left px-4 py-3 rounded-lg border transition-all text-sm
+                      ${isGrpSub
+                        ? isCorrect ? 'bg-green-100 border-green-500 dark:bg-green-900/30'
+                          : isSel ? 'bg-red-100 border-red-400 dark:bg-red-900/30' : 'border-slate-200 dark:border-slate-700'
+                        : isSel ? 'border-[#004030] dark:border-[#D8C3A5] bg-[#004030]/5' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
+                      }`}>
+                    {q.opts[origIdx]}
+                  </button>
+                );
+              })}
+            </div>
+            {isGrpSub && (
+              <p className={`mt-2 text-sm italic ${
+                shuffledMaps[qi][selected[qi]] === _d(q.ans)
+                  ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+              }`}>
+                {shuffledMaps[qi][selected[qi]] === _d(q.ans)
+                  ? `✓ ${t.correct}` : `✗ ${t.incorrect}`} — {t.explanation}：{q.exp}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      <div className="flex items-center gap-3">
+        {!submitted[groupIdx]
+          ? <button onClick={handleGroupSubmit}
+              disabled={!currentIndices.every((_,i) => selected[currentStart+i] !== undefined)}
+              className="px-6 py-2 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg disabled:opacity-40">
+              {t.submit}
+            </button>
+          : <>
+              {groupIdx < totalGroups-1 && (
+                <button onClick={() => setGroupIdx(groupIdx+1)}
+                  className="px-6 py-2 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg">
+                  {t.quiz_next}
+                </button>
+              )}
+              <button onClick={() => { setGroupIdx(0); setSelected({}); setSubmitted({}); }}
+                className="px-6 py-2 border border-[#004030] dark:border-[#D8C3A5] text-[#004030] dark:text-[#D8C3A5] font-bold rounded-lg">
+                {t.quiz_retry}
+              </button>
+            </>
+        }
+      </div>
+    </div>
+  );
+};
+
+/* ============ H2 + LinkCard ============ */
+const H2 = ({ children, icon, number }) => (
+  <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-black text-[#004030] dark:text-[#D8C3A5] mb-6 flex items-center gap-3 flex-wrap">
+    {icon && <span className="text-2xl">{icon}</span>}
+    {number !== undefined && <span>{number}.</span>}
+    <span>{children}</span>
+  </h2>
+);
+
+const LinkCard = ({label, url, desc}) => (
+  <a href={url} target="_blank" rel="noopener noreferrer"
+    className="block bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-[#004030] dark:hover:border-[#D8C3A5] hover:shadow-md transition-all group">
+    <span className="font-bold font-serif text-sm text-[#004030] dark:text-[#D8C3A5] group-hover:underline">{label}</span>
+    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-1">{desc}</p>
+  </a>
+);
+
+/* ============ Lab 子元件（頂層宣告）============ */
+
+// Lab 1: Paradigm Toggle — EMI vs EML 對照器
+const ParadigmToggleLab = ({lang}) => {
+  const [mode, setMode] = useState('eml');
+  const data = {
+    emi: { en: { focus: 'Teacher', method: 'Lecture-driven', center: 'How to teach effectively', risk: 'Mismatch with B1 learners' },
+           zh: { focus: '教師', method: '講授為主', center: '如何把英文教得好', risk: 'B1 學生跟不上' } },
+    eml: { en: { focus: 'Student', method: 'Learning by doing', center: 'How students learn through English', risk: 'Requires SDL motivation' },
+           zh: { focus: '學生', method: '做中學', center: '學生如何透過英文學習', risk: '需 SDL 動機支撐' } }
+  };
+  const d = data[mode][lang];
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <h4 className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] mb-4">{lang==='zh'?'🔄 EMI ↔ EML 典範對照器':'🔄 EMI ↔ EML Paradigm Toggle'}</h4>
+      <div className="flex gap-2 mb-4">
+        <button onClick={()=>setMode('emi')} className={`flex-1 px-4 py-2 rounded-lg font-bold text-sm ${mode==='emi'?'bg-[#004030] text-white dark:bg-[#D8C3A5] dark:text-[#004030]':'bg-slate-100 dark:bg-slate-700'}`}>EMI · Instruction</button>
+        <button onClick={()=>setMode('eml')} className={`flex-1 px-4 py-2 rounded-lg font-bold text-sm ${mode==='eml'?'bg-[#004030] text-white dark:bg-[#D8C3A5] dark:text-[#004030]':'bg-slate-100 dark:bg-slate-700'}`}>EML · Learning</button>
+      </div>
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+          <div className="text-xs text-slate-500 mb-1">{lang==='zh'?'焦點':'Focus'}</div>
+          <div className="font-bold">{d.focus}</div>
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+          <div className="text-xs text-slate-500 mb-1">{lang==='zh'?'方法':'Method'}</div>
+          <div className="font-bold">{d.method}</div>
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 col-span-2">
+          <div className="text-xs text-slate-500 mb-1">{lang==='zh'?'核心問題':'Central Question'}</div>
+          <div className="font-bold text-[#004030] dark:text-[#D8C3A5]">{d.center}</div>
+        </div>
+        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 col-span-2">
+          <div className="text-xs text-amber-700 dark:text-amber-300 mb-1">{lang==='zh'?'⚠ 主要風險':'⚠ Main Risk'}</div>
+          <div className="font-medium text-amber-800 dark:text-amber-200">{d.risk}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Lab 2: Language Type Classifier — 拖曳分類
+const LanguageClassifierLab = ({lang}) => {
+  const items = [
+    { id:1, name:lang==='zh'?'英文':'English', type:'natural' },
+    { id:2, name:'Python', type:'programming' },
+    { id:3, name:lang==='zh'?'行銷術語':'Marketing Jargon', type:'profession' },
+    { id:4, name:'HTML', type:'programming' },
+    { id:5, name:lang==='zh'?'華語':'Mandarin', type:'natural' },
+    { id:6, name:lang==='zh'?'會計報表':'Accounting Reports', type:'profession' },
+    { id:7, name:'JavaScript', type:'programming' },
+    { id:8, name:lang==='zh'?'供應鏈管理':'SCM Terms', type:'profession' }
+  ];
+  const [answers, setAnswers] = useState({});
+  const [checked, setChecked] = useState(false);
+  const types = [
+    { key:'natural', label:lang==='zh'?'自然語言':'Natural', color:'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-500' },
+    { key:'profession', label:lang==='zh'?'專業語言':'Profession', color:'bg-amber-100 dark:bg-amber-900/30 border-amber-500' },
+    { key:'programming', label:lang==='zh'?'程式語言':'Programming', color:'bg-sky-100 dark:bg-sky-900/30 border-sky-500' }
+  ];
+  const correctCount = items.filter(it => answers[it.id] === it.type).length;
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <h4 className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] mb-2">{lang==='zh'?'🗂️ Language 三類分類練習':'🗂️ Three-Type Language Classifier'}</h4>
+      <p className="text-xs text-slate-500 mb-4">{lang==='zh'?'為每個項目選擇正確類型，完成後按「檢核」':'Select the correct type for each item, then click "Check"'}</p>
+      <div className="space-y-2 mb-4">
+        {items.map(it => (
+          <div key={it.id} className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-sm w-40">{it.name}</span>
+            {types.map(ty => (
+              <button key={ty.key} onClick={()=>!checked && setAnswers(a=>({...a,[it.id]:ty.key}))}
+                className={`px-3 py-1 text-xs rounded-md border ${answers[it.id]===ty.key?ty.color+' border-2 font-bold':'border-slate-300 dark:border-slate-600'}
+                  ${checked && answers[it.id]===ty.key && it.type===ty.key?'ring-2 ring-green-500':''}
+                  ${checked && answers[it.id]===ty.key && it.type!==ty.key?'ring-2 ring-red-500':''}`}>
+                {ty.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3">
+        <button onClick={()=>setChecked(true)} disabled={Object.keys(answers).length<items.length}
+          className="px-4 py-2 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] text-sm font-bold rounded-lg disabled:opacity-40">
+          {lang==='zh'?'檢核':'Check'}
+        </button>
+        <button onClick={()=>{setAnswers({});setChecked(false);}}
+          className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm rounded-lg">
+          {lang==='zh'?'重做':'Reset'}
+        </button>
+        {checked && <span className="text-sm font-bold text-[#004030] dark:text-[#D8C3A5]">{correctCount}/{items.length} {lang==='zh'?'正確':'correct'}</span>}
+      </div>
+    </div>
+  );
+};
+
+// Lab 3: SDT Motivation Diagnostic — 自我動機診斷
+const SDTDiagnosticLab = ({lang}) => {
+  const questions = lang==='zh' ? [
+    { axis:'autonomy', q:'我覺得這門課的學習方式我能自己決定' },
+    { axis:'autonomy', q:'我可以照自己的步調學習' },
+    { axis:'competency', q:'我相信自己能完成這門課的挑戰' },
+    { axis:'competency', q:'我累積了越來越多的小成功經驗' },
+    { axis:'relatedness', q:'我在小組中感到被支持' },
+    { axis:'relatedness', q:'我和老師/同學的關係讓我願意投入' }
+  ] : [
+    { axis:'autonomy', q:'I can decide how to learn in this course' },
+    { axis:'autonomy', q:'I can learn at my own pace' },
+    { axis:'competency', q:'I believe I can rise to this course\'s challenges' },
+    { axis:'competency', q:'I am accumulating small wins' },
+    { axis:'relatedness', q:'I feel supported in my group' },
+    { axis:'relatedness', q:'My bond with teacher/peers makes me engage' }
+  ];
+  const [scores, setScores] = useState({});
+  const set = (i,v) => setScores(s=>({...s,[i]:v}));
+  const calc = (axis) => {
+    const idxs = questions.map((q,i)=>q.axis===axis?i:-1).filter(i=>i>=0);
+    const sum = idxs.reduce((a,i)=>a+(scores[i]||0),0);
+    return idxs.length ? Math.round(sum/idxs.length*20) : 0;
+  };
+  const axes = [
+    { key:'autonomy', label:lang==='zh'?'① 自主 Autonomy':'① Autonomy', color:'#10b981' },
+    { key:'competency', label:lang==='zh'?'② 勝任 Competency':'② Competency', color:'#D8C3A5' },
+    { key:'relatedness', label:lang==='zh'?'③ 關聯 Relatedness':'③ Relatedness', color:'#0ea5e9' }
+  ];
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <h4 className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] mb-2">{lang==='zh'?'📊 SDT 三要素自我診斷':'📊 SDT Three-Element Self-Diagnostic'}</h4>
+      <p className="text-xs text-slate-500 mb-4">{lang==='zh'?'每題 1（非常不同意）~ 5（非常同意）':'Rate each item 1 (strongly disagree) ~ 5 (strongly agree)'}</p>
+      <div className="space-y-3 mb-5">
+        {questions.map((qq,i)=>(
+          <div key={i} className="text-sm">
+            <p className="mb-1">{i+1}. {qq.q}</p>
+            <div className="flex gap-1">
+              {[1,2,3,4,5].map(v=>(
+                <button key={v} onClick={()=>set(i,v)}
+                  className={`w-9 h-9 rounded-md text-xs font-bold ${scores[i]===v?'bg-[#004030] text-white dark:bg-[#D8C3A5] dark:text-[#004030]':'bg-slate-100 dark:bg-slate-700'}`}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+        <p className="text-sm font-bold mb-3">{lang==='zh'?'你的動機剖面（%）':'Your Motivation Profile (%)'}</p>
+        {axes.map(a=>{
+          const pct = calc(a.key);
+          return (
+            <div key={a.key} className="mb-3">
+              <div className="flex justify-between text-xs mb-1"><span>{a.label}</span><span className="font-bold">{pct}%</span></div>
+              <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div style={{width:`${pct}%`,background:a.color}} className="h-full transition-all duration-500"/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Lab 4: AI Autonomy Spectrum — Vibe Coding 自主性光譜
+const AutonomySpectrumLab = ({lang}) => {
+  const [level, setLevel] = useState(1);
+  const stages = lang==='zh' ? [
+    { name:'Assistant 助手', humanLoad:90, aiLoad:10, ex:'學生主導，AI 補語法、查資料、修錯字', risk:'AI 角色被低估，效率有限' },
+    { name:'Copilot 副駕', humanLoad:50, aiLoad:50, ex:'學生提構想，AI 生成代碼/SVG/文本，學生審閱修改', risk:'學生需具備審閱能力，否則照單全收' },
+    { name:'Agent 代理人', humanLoad:20, aiLoad:80, ex:'學生下達高階目標，AI 自主規劃、執行、產出完整 SPA', risk:'學生淪為旁觀者，學習效益可能下降' }
+  ] : [
+    { name:'Assistant', humanLoad:90, aiLoad:10, ex:'Student-led; AI fixes syntax, looks up info, corrects typos', risk:'AI underutilized; limited efficiency gains' },
+    { name:'Copilot', humanLoad:50, aiLoad:50, ex:'Student proposes; AI generates code/SVG/text; student reviews', risk:'Requires review competency to avoid blind acceptance' },
+    { name:'Agent', humanLoad:20, aiLoad:80, ex:'Student sets high-level goals; AI plans, executes, delivers full SPA', risk:'Student becomes spectator; learning gains may drop' }
+  ];
+  const s = stages[level];
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <h4 className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] mb-4">{lang==='zh'?'🎚️ AI 協作自主性光譜':'🎚️ AI Collaboration Autonomy Spectrum'}</h4>
+      <div className="flex gap-2 mb-4">
+        {stages.map((st,i)=>(
+          <button key={i} onClick={()=>setLevel(i)}
+            className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold ${level===i?'bg-[#004030] text-white dark:bg-[#D8C3A5] dark:text-[#004030]':'bg-slate-100 dark:bg-slate-700'}`}>
+            {st.name}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-3">
+        <div>
+          <div className="flex justify-between text-xs mb-1"><span>{lang==='zh'?'👤 人類負擔':'👤 Human Load'}</span><span className="font-bold">{s.humanLoad}%</span></div>
+          <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div style={{width:`${s.humanLoad}%`}} className="h-full bg-[#004030] dark:bg-[#D8C3A5] transition-all duration-500"/>
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between text-xs mb-1"><span>{lang==='zh'?'🤖 AI 負擔':'🤖 AI Load'}</span><span className="font-bold">{s.aiLoad}%</span></div>
+          <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div style={{width:`${s.aiLoad}%`}} className="h-full bg-amber-500 transition-all duration-500"/>
+          </div>
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3 text-sm">
+          <p className="text-xs text-slate-500 mb-1">{lang==='zh'?'情境範例':'Example Scenario'}</p>
+          <p>{s.ex}</p>
+        </div>
+        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-sm">
+          <p className="text-xs text-amber-700 dark:text-amber-300 mb-1">{lang==='zh'?'⚠ 教學風險':'⚠ Pedagogical Risk'}</p>
+          <p className="text-amber-800 dark:text-amber-200">{s.risk}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Lab 5: Pace Visualizer — 個別化進度模擬
+const PaceVisualizerLab = ({lang}) => {
+  const [students] = useState([
+    { id:'A', name:lang==='zh'?'學生 A（快）':'Student A (Fast)', pace:1.3 },
+    { id:'B', name:lang==='zh'?'學生 B（中）':'Student B (Mid)', pace:1.0 },
+    { id:'C', name:lang==='zh'?'學生 C（慢）':'Student C (Slow)', pace:0.6 }
+  ]);
+  const [week, setWeek] = useState(8);
+  const totalWeeks = 16;
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+      <h4 className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] mb-2">{lang==='zh'?'⏱️ 個別化進度視覺化':'⏱️ Individualized Pace Visualizer'}</h4>
+      <p className="text-xs text-slate-500 mb-4">{lang==='zh'?'拖曳週次，觀察三位學生在 SDL 下的進度差異':'Drag the week slider to see how SDL allows differentiated pacing'}</p>
+      <div className="mb-4">
+        <label className="text-sm">{lang==='zh'?'目前週次：':'Current Week: '}<span className="font-bold text-[#004030] dark:text-[#D8C3A5]">{week}</span> / {totalWeeks}</label>
+        <input type="range" min="1" max={totalWeeks} value={week} onChange={e=>setWeek(parseInt(e.target.value))}
+          className="w-full mt-1" />
+      </div>
+      <div className="space-y-3">
+        {students.map(s=>{
+          const progress = Math.min(100, Math.round(week * s.pace / totalWeeks * 100));
+          return (
+            <div key={s.id}>
+              <div className="flex justify-between text-sm mb-1"><span>{s.name}</span><span className="font-bold">{progress}%</span></div>
+              <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div style={{width:`${progress}%`}} className="h-full bg-gradient-to-r from-[#004030] to-[#D8C3A5] transition-all duration-300 flex items-center justify-end pr-1">
+                  {progress>=100 && <span className="text-[10px] text-white font-bold">✓</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs italic text-slate-500 mt-4">{lang==='zh'?'💡 SDL 允許不同 pace，傳統 EMI 一刀切會犧牲 B 與 C':'💡 SDL allows differentiated pace; one-size-fits-all EMI sacrifices B & C'}</p>
+    </div>
+  );
+};
+
+/* ============ 雙語 Dictionary ============ */
+const dict = {
+  zh: {
+    brand: "AIVC4EML",
+    title: "AI 氛圍式編碼於 EML 之應用",
+    subtitle: "TESPA 2026 · 駱世民教授",
+    nav_modules: "單元目錄", nav_prev: "← 上一單元", nav_next: "下一單元 →", nav_home: "首頁",
+    key_terms: "關鍵專有名詞", flip_prompt: "點擊翻轉",
+    flip_status: "已讀 {read} / 已顯示 {shown} / 總計 {total}",
+    flip_next: "下一組", flip_retry: "重新開始",
+    audio_read: "語音導覽",
+    quiz_title: "模組知識檢定",
+    quiz_status: "答對 {correct} / 已答 {answered} / 總計 {total}",
+    quiz_next: "下一組", quiz_retry: "重新測驗",
+    submit: "提交答案",
+    score: "得分", correct: "正確", incorrect: "錯誤", explanation: "解析",
+    overview_label: "Overview 概述",
+    highlights_label: "Highlights 重點",
+    deep_dive_label: "Deep Dive 深入解析",
+    wrapup_label: "Wrap-up 總結",
+
+    // Analytics
+    analytics_title: "學習歷程分析",
+    analytics_desc: "本模組記錄您在各單元的學習行為，包括停留時間、互動點擊、測驗答對率、學習卡使用率，並提供弱點分析與複習建議。所有資料儲存於本機瀏覽器。",
+    analytics_form_title: "學習者基本資料",
+    analytics_group: "組別", analytics_group_select: "請選擇", analytics_dept: "系級",
+    analytics_dept_ph: "例：IBS3",
+    analytics_id: "學號", analytics_id_ph: "例：113212599",
+    analytics_name_en: "英文姓名", analytics_name_en_ph: "例：Shihmin Lo",
+    analytics_name_zh: "中文姓名", analytics_name_zh_ph: "例：駱世民",
+    analytics_export_csv: "匯出 CSV 歷程記錄",
+    analytics_fill_required: "請填寫完整資訊以解鎖匯出",
+    analytics_refresh_prompt: "是否刷新紀錄儲存？",
+    group_options: ["G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12","Others"],
+    analytics_total_time: "總學習時間", analytics_total_clicks: "總互動點擊",
+    analytics_overall_acc: "總體測驗答對率",
+    analytics_card_usage: "學習卡使用率",
+    analytics_module: "模組", analytics_time: "停留時間",
+    analytics_clicks: "點擊次數", analytics_acc: "答對率",
+    analytics_correct_ans_total: "答對 / 已填答 / 總題數",
+    analytics_cards_read_total: "已讀 / 總卡數",
+    analytics_no_data: "尚未測驗", analytics_sec: "秒", analytics_times: "次",
+    analytics_progress_title: "整體學習進度",
+    analytics_progress_visited: "已瀏覽", analytics_progress_not_visited: "未瀏覽",
+    analytics_progress_quiz_done: "已測驗",
+    analytics_wp_title: "弱點分析與複習建議",
+    analytics_wp_incorrect: "答錯題目：",
+    analytics_wp_goto: "→ 前往複習此模組",
+    analytics_wp_allpass: "所有已測驗模組答對率均達 75% 以上，表現優異！",
+    analytics_wp_saved: "💾 學習歷程已自動儲存於本機瀏覽器",
+    analytics_wp_clear: "🗑 清除歷程",
+    analytics_wp_clear_confirm: "確定要清除所有學習歷程資料嗎？此操作無法復原。",
+    analytics_wp_tts_intro: "以下是您的弱點分析。",
+    analytics_wp_tts_module: "模組：{name}，答對率 {acc}%，建議複習。",
+    analytics_wp_tts_allpass: "恭喜！所有已測驗模組答對率均達 75% 以上。",
+
+    // ===== M0 執行概要 =====
+    m0_nav: "0. 執行概要",
+    m0_title: "AI 氛圍式編碼於 EML 之應用",
+    m0_intro: "本講座提出一個整合性的教學設計觀點：當台灣的地方型大學（如國立暨南國際大學）面對英文程度約 B1、且包含本地生與外籍生的學生組成時，無法直接套用台灣頂尖大學（台清交成）的 EMI 模式，應將典範從 EMI（以英語為教學媒介）轉向 EML（以英語為學習媒介），把教學的重心從「教師如何教」移轉到「學生如何學」。達成此轉移的核心方法論是「做中學」，並由自我導向學習（SDL）支撐學習動機。動機的理論基礎來自自我決定理論（SDT）的三要素——自主、勝任、關聯，其中勝任又透過 Bandura 自我效能理論的四項來源以形成性、經常性的評量逐步建構。本講座的關鍵洞察在於：EML 中的「Language」不限於自然語言，專業術語與程式語言本質上也是一種 Language，這與 GenAI 處理自然人類語言的能力範疇高度對應。實踐路徑是以 AI 氛圍式編碼為操作層，運用 Gemini 與 Claude 等工具，從助手、副駕到代理人逐步提升 AI 協作層級，產出 SVG 與 SPA 作為 EML 教材。針對外籍生融入，則在 ESP 與 EAP 之外，額外發展 MSAP 作為對等支援。",
+    m0_why: "為什麼這個架構重要？",
+    m0_why_desc: "在 GenAI 普及與台灣高教面臨少子化與國際化雙重壓力的當下，地方型大學需要一條不同於頂尖大學的差異化路徑。本架構提供了一個可操作的教學設計藍圖，把抽象的「英語授課」轉化為具體的「以英語驅動的學習行為」，並以 AI 工具降低 B1 學生的學習門檻。",
+    m0_modules: [
+      { num: "01", title: "學習典範轉移", desc: "從 EMI 到 EML，從教師中心到學生中心，從教導到做中學" },
+      { num: "02", title: "Language 擴展定義", desc: "自然語言、專業語言、程式語言——三類皆為 GenAI 可處理的 Language" },
+      { num: "03", title: "GenAI 與四技能", desc: "Content Generation 對應 Input/Output 四技能的多模態學習" },
+      { num: "04", title: "SDL × SDT × Self-Efficacy", desc: "自我導向學習的動機支撐鏈：三要素 + 四項自我效能來源" },
+      { num: "05", title: "外籍生融入：MSAP", desc: "ESP 與 EAP 之上，提出華語版 MSAP 作為對等支援" },
+      { num: "06", title: "AI Vibe Coding 工具層", desc: "助手 → 副駕 → 代理人：自主性光譜與產出格式" }
+    ],
+    m0_stats: [
+      { val: "B1", label: "學生英語程度基準" },
+      { val: "3", label: "Language 類型" },
+      { val: "4", label: "Self-Efficacy 來源" },
+      { val: "3", label: "AI 自主性層級" }
+    ],
+    m0_start: "開始學習 →",
+
+    // ===== M1 學習典範轉移 =====
+    m1_nav: "1. 學習典範轉移",
+    m1_title: "EMI → EML：從教師中心到學生中心",
+    m1_overview: "傳統 EMI（English as a Medium of Instruction，以英語為教學媒介）把焦點放在「教師如何把英文教得好」；EML（English as a Medium of Learning，以英語為學習媒介）則把焦點移到「學生如何透過英文學習得好」。對於英語程度約 B1 的地方型大學學生，EMI 的「教得好」不必然等於「學得會」，必須回到學習者本身。",
+    m1_highlights: ["EMI vs. EML", "Student-Centered", "Learning by Doing", "B1 學生情境", "地方型大學定位"],
+    m1_p1: "EMI 與 EML 的核心差別不在英文程度的高低，而在教學設計的重心。EMI 把教師當作「英語講授的主體」，預設學生能跟得上教師的英語節奏；EML 則把教師當作「學習活動的設計者」，預設學生在做中學的過程中逐步建構英語能力。這個典範移轉直接呼應了過去三十年教育學界從行為主義走向建構主義的大方向。",
+    m1_p2: "在台灣的高等教育場域中，台清交成等頂尖大學的學生平均英語程度遠高於 B1，可以承受傳統 EMI 的高強度英語講授。但地方型大學如國立暨南國際大學，學生英語程度多落在 B1 上下，加上校園地處南投埔里、生活情境以中文為主，若強行套用頂大的 EMI 模式，往往導致學生「聽不懂、學不會、無感覺」。",
+    m1_p3: "EML 的解方是把學習主導權交還給學生：學生可以選擇自己的學習節奏，可以透過動手做產出真實成品，可以在小組中相互支援。教師的角色從「英語講授者」轉為「學習鷹架的搭建者」——設計任務、提供工具、給予回饋。AI 的加入更強化了這個角色轉移，因為 AI 可以承擔大量的個別化指導工作。",
+    m1_wrapup: "EML 不是 EMI 的反對者，而是 EMI 的演進版本。當學生程度、學習科技、教學理論三者同時演化時，把重心從「教」移到「學」是必然的方向。地方型大學恰好是最適合實驗 EML 的場域，因為它們既無頂大的英語人才優勢，也沒有頂大的傳統包袱。",
+    m1_terms: [
+      { front: "EMI", back: "English as a Medium of Instruction — 以英語為教學媒介，焦點在教師端如何用英語講授課程內容" },
+      { front: "EML", back: "English as a Medium of Learning — 以英語為學習媒介，焦點在學生端如何透過英語進行學習活動" },
+      { front: "Student-Centered", back: "學生為中心：以學習者的需求、節奏、興趣為設計起點，而非以教師講授為起點" },
+      { front: "Learning by Doing", back: "做中學：透過實作產出真實成品來累積能力，而非僅靠聽講與記憶" },
+      { front: "B1 Level", back: "歐洲共同語言參考架構（CEFR）的中級門檻，能理解日常熟悉主題、應付旅行、撰寫簡單連貫文章" },
+      { front: "Local University", back: "地方型大學：相對於台清交成等頂尖大學，校園與生源以特定地理區域為主的大學" }
+    ],
+    m1_q: [
+      { q: "EMI 與 EML 的核心差別在於：", opts: ["英語程度的高低", "教學設計的重心是教師還是學生", "課程使用的教材語言", "教師的學歷背景"], ans: _A1, exp: "EMI 重心在教師如何教，EML 重心在學生如何學，這是典範差異而非英語程度差異。" },
+      { q: "為什麼地方型大學不適合直接套用頂大的 EMI 模式？", opts: ["經費不足", "學生程度多在 B1，強行 EMI 會導致聽不懂、學不會", "師資不夠", "教室設備不夠"], ans: _A1, exp: "B1 學生承受高強度英語講授有困難，需要不同的教學設計。" },
+      { q: "EML 中教師的主要角色轉變為：", opts: ["英語講授者", "學習鷹架的搭建者", "考試出題者", "翻譯者"], ans: _A1, exp: "EML 教師設計學習任務、提供工具、給予回饋，而非單純講授。" },
+      { q: "Learning by Doing 的核心精神是：", opts: ["背誦英語單字", "考試導向的反覆練習", "透過實作產出真實成品來累積能力", "聽教師講授"], ans: _A2, exp: "做中學強調以實作和產出為學習主軸。" }
+    ],
+
+    // ===== M2 Language 擴展定義 =====
+    m2_nav: "2. Language 擴展定義",
+    m2_title: "Language 的三類擴展：自然、專業、程式",
+    m2_overview: "這是本講座最關鍵的洞察：在 EML 架構下，「Language」不應僅限於自然語言。商管專業術語是一種 Language，程式語言也是一種 Language，三者皆可被 GenAI 處理、生成、輔助學習。這個概念樞紐把 EML 從單純的英語教學擴展為跨領域的語言能力建構。",
+    m2_highlights: ["Natural Language", "Profession Language", "Programming Language", "GenAI 可處理三類", "樞紐洞察"],
+    m2_p1: "傳統的 EMI 討論幾乎都聚焦在自然語言（English、Mandarin），但在 21 世紀的高等教育場域，學生實際需要掌握的「語言」遠不止此。商學院學生要看懂財報、IPO 公告、ESG 報告，這些都是高度結構化的「商管專業語言」；理工科學生要寫 Python、HTML、SQL，這些是不折不扣的「程式語言」。把這三類都納入 EML 的範疇，才能真正回應學生的學習需求。",
+    m2_p2: "更關鍵的是，這三類 Language 都有一個共同特性：它們都能被 GenAI 處理。GenAI 之所以能理解英文、中文、Python、HTML，是因為從計算的角度看，它們本質上都是 token 序列。這個技術現實，恰好讓 EML 的擴展定義獲得堅實的基礎——當我們用 GenAI 同時支援自然語言、專業語言、程式語言的學習時，我們其實是在用同一個工具處理同一類資料。",
+    m2_p3: "Vibe Coding 的概念正是建立在這個樞紐之上：學生不需要精通 Python 的所有語法細節，只要能用自然語言描述「我想要什麼樣的成品」，AI 就能把這段自然語言翻譯成程式語言，並產出可運行的程式。這把程式語言從「障礙」轉化為「另一種 Language」，與英文、中文站在同一個學習層級上。",
+    m2_wrapup: "把 Language 擴展為自然、專業、程式三類，是這份架構的樞紐概念。它解釋了為什麼 GenAI 能同時支援這三類學習，也解釋了為什麼 Vibe Coding 能降低程式學習的入門門檻。一旦學生接受「Programming 也是 Language」，他們對程式的恐懼就會大幅降低。",
+    m2_terms: [
+      { front: "Natural Language", back: "自然語言：人類自然演化而成的溝通語言，如英文、中文、日文等，本講座中作為 EMI/EML 的教學媒介本身" },
+      { front: "Profession Language", back: "專業語言：特定學科或產業內使用的高度結構化術語體系，如商管、會計、行銷的專業詞彙與表達方式" },
+      { front: "Programming Language", back: "程式語言：人類設計用來指揮電腦執行任務的形式化語言，如 Python、HTML、JavaScript 等" },
+      { front: "Token Sequence", back: "Token 序列：GenAI 處理文字的基本單位，無論英文、中文、程式碼，對 AI 而言都是同質的 token 序列" },
+      { front: "Vibe Coding", back: "氛圍式編碼：以自然語言意圖驅動 AI 產出程式碼的協作方式，不需精通語法細節即可產出可運行成品" },
+      { front: "Domain Pivot", back: "領域樞紐：把三類 Language 視為同質學習對象的樞紐概念，使 GenAI 成為跨領域學習工具" }
+    ],
+    m2_q: [
+      { q: "在本講座的擴展定義中，下列哪一項不屬於 Language 的三類？", opts: ["自然語言（English）", "專業語言（商管術語）", "程式語言（Python）", "肢體語言（手勢）"], ans: _A3, exp: "本講座的三類擴展為自然、專業、程式語言，不含肢體語言。" },
+      { q: "為什麼 GenAI 能同時支援這三類 Language 的學習？", opts: ["因為 AI 學過所有語言", "因為這三類在 AI 眼中都是 token 序列，本質同源", "因為 AI 有翻譯功能", "因為 AI 速度快"], ans: _A1, exp: "從計算角度，三類 Language 都是 token 序列，這是 GenAI 能統一處理的根本原因。" },
+      { q: "Vibe Coding 的核心精神是：", opts: ["要精通所有程式語法", "用自然語言意圖驅動 AI 產出可運行程式", "完全不寫程式", "用圖形介面拖拉"], ans: _A1, exp: "Vibe Coding 讓學生用自然語言描述意圖，AI 翻譯為程式碼。" },
+      { q: "把 Programming 視為一種 Language 的教學意義是：", opts: ["讓學生變成工程師", "降低學生對程式的恐懼，使其與英文站在同一學習層級", "取代英文學習", "簡化程式語法"], ans: _A1, exp: "把程式視為 Language 是觀念轉換，降低學習心理障礙。" }
+    ],
+    // ===== M3 GenAI ↔ 四技能 =====
+    m3_nav: "3. GenAI ↔ 四技能",
+    m3_title: "GenAI 內容生成對應語言四技能",
+    m3_overview: "GenAI 的核心能力是 Content Generation（內容生成），可生成 Text、Speech、Image、Video 四種模態的內容。這四種生成模態恰好對應人類語言學習的四技能：Listening、Reading（輸入導向）與 Speaking、Writing（輸出導向）。GenAI 因此成為支援 EML 四技能訓練的多模態工具。",
+    m3_highlights: ["Content Generation", "Text / Speech / Image / Video", "Input-oriented", "Output-oriented", "多模態學習"],
+    m3_p1: "GenAI 的本質是 Content Generation，這個能力建立在它對 Natural Human Languages 的理解之上。當我們把 GenAI 的四種生成模態（Text、Speech、Image、Video）與語言學習的四技能（Listening、Speaking、Reading、Writing）並列時，會發現一個漂亮的對應關係：Text 對應 Reading 與 Writing，Speech 對應 Listening 與 Speaking，Image 與 Video 則提供多模態的視覺輔助。",
+    m3_p2: "在 EML 的實踐中，四技能可進一步分為 Input-oriented（輸入導向：Listening、Reading）與 Output-oriented（輸出導向：Speaking、Writing）。傳統英語教學常偏向 Input 而忽略 Output，這正是台灣學生「會看會聽但不太敢說敢寫」的根源。GenAI 因為能即時生成個別化的回饋與範例，恰好補上了 Output 訓練的缺口。",
+    m3_p3: "更進一步看，GenAI 能生成的不僅是「人類已產出過的內容」，更能依學生當下的學習狀態與需求即時客製化內容。一位 B1 學生想閱讀關於 ESG 的文章，GenAI 可以即時把高難度的學術文獻改寫為 B1 程度的對應版本，並同步提供關鍵詞註解、聽力音檔、相關圖像。這種即時、個別化、多模態的支援，是傳統教材無法提供的。",
+    m3_wrapup: "GenAI 的四種生成模態與語言四技能的對應關係，是 EML 能真正落地的技術基礎。理解這個對應關係，教師就能更精準地設計教學任務：訓練 Listening 時呼叫 Speech 生成，訓練 Writing 時用 Text 生成提供範例與回饋，訓練主題理解時搭配 Image 與 Video。",
+    m3_terms: [
+      { front: "Content Generation", back: "內容生成：GenAI 的核心能力，依輸入指令產出文字、語音、圖像、影片等內容" },
+      { front: "Natural Human Languages", back: "自然人類語言：人類自然演化的溝通語言，是 GenAI 訓練資料的主體" },
+      { front: "Input-oriented Skills", back: "輸入導向技能：Listening 與 Reading，學習者作為訊息接收方的能力" },
+      { front: "Output-oriented Skills", back: "輸出導向技能：Speaking 與 Writing，學習者作為訊息產出方的能力" },
+      { front: "Multimodal", back: "多模態：同時運用文字、語音、圖像、影片多種模態進行學習，提升理解深度" },
+      { front: "Real-time Adaptation", back: "即時客製化：GenAI 能依學生當下程度與需求即時調整內容難度與形式" }
+    ],
+    m3_q: [
+      { q: "GenAI 的四種生成模態不包含下列何者？", opts: ["Text 文字", "Speech 語音", "Smell 氣味", "Video 影片"], ans: _A2, exp: "GenAI 目前主要生成 Text、Speech、Image、Video，不含氣味。" },
+      { q: "Input-oriented 的兩項技能是：", opts: ["Speaking、Writing", "Listening、Reading", "Reading、Writing", "Listening、Speaking"], ans: _A1, exp: "輸入導向 = Listening + Reading；輸出導向 = Speaking + Writing。" },
+      { q: "為什麼 GenAI 特別能補強 Output 訓練的缺口？", opts: ["AI 會替學生說話寫作", "AI 能即時生成個別化回饋與範例", "AI 能取代教師", "AI 速度快"], ans: _A1, exp: "個別化、即時的回饋與範例是傳統教材難以提供的，這正是 Output 訓練最需要的。" },
+      { q: "對 B1 學生而言，GenAI 處理 ESG 學術文章的最佳方式是：", opts: ["原文直接給學生", "即時改寫為 B1 程度版本並提供註解、音檔、圖像", "翻譯成中文", "刪除難字"], ans: _A1, exp: "即時、個別化、多模態的改寫是 GenAI 最強的功能，符合 EML 精神。" }
+    ],
+
+    // ===== M4 SDL × SDT × Self-Efficacy =====
+    m4_nav: "4. 學習動機支撐鏈",
+    m4_title: "SDL × SDT × Self-Efficacy：學習動機的理論支撐",
+    m4_overview: "做中學需要學生主動投入，這就需要 Self-Directed Learning（SDL，自我導向學習）作為行為層的支撐。SDL 又需要學習動機（Motivation）作為心理層的引擎，而動機的理論基礎來自 Self-Determination Theory（SDT，自我決定理論）的三要素——自主、勝任、關聯。其中勝任又透過 Bandura 的 Self-Efficacy 四項來源具體建構。",
+    m4_highlights: ["SDL 自我導向學習", "SDT 三要素", "Autonomy / Competency / Relatedness", "Self-Efficacy 四來源", "Mastery Experience"],
+    m4_p1: "Self-Directed Learning（SDL）是 EML 在學生端的具體展現：學生選擇自己的學習主題、進度、節奏、評量方式。但 SDL 不是放任，而是需要強烈的學習動機作為持續引擎。沒有動機的 SDL 會迅速崩塌——學生會選最簡單的主題、跳過困難的單元、不交報告。因此 SDL 的成功與否，幾乎完全取決於動機設計。",
+    m4_p2: "Self-Determination Theory（SDT）由 Deci 與 Ryan 提出，是當代動機理論的主流架構。SDT 主張內在動機建立在三項基本心理需求的滿足之上：① Autonomy（自主，感覺自己能決定）② Competency（勝任，感覺自己有能力）③ Relatedness（關聯，感覺與他人連結）。三者缺一不可。在 EML 課程設計中，Autonomy 對應「選修 vs. 必修」與「Progress/Pace」的個別化；Relatedness 對應「小組學習」的社群歸屬；Competency 則最可被教學設計直接介入。",
+    m4_p3: "Bandura 的 Self-Efficacy（自我效能）理論為 Competency 提供了具體的操作路徑。Self-Efficacy 有四項來源：① Mastery Experience（精熟經驗，最強來源）② Vicarious Experience（替代經驗，看到同儕成功）③ Verbal Persuasion（言語說服，教師鼓勵）④ Psychological Status（心理／生理狀態）。其中 Mastery Experience 透過形成性、經常性的小型評量逐步累積，是最可被教學設計直接控制的元素。",
+    m4_wrapup: "SDL → 動機 → SDT 三要素 → Self-Efficacy 四來源 → Mastery Experience，這條動機支撐鏈是 EML 真正能持續運作的心理基礎。教學設計者若只談 SDL 而忽略其下的動機機制，SDL 終將淪為口號。",
+    m4_terms: [
+      { front: "SDL", back: "Self-Directed Learning 自我導向學習：學習者主動選擇學習主題、進度、節奏與評量方式的學習模式" },
+      { front: "SDT", back: "Self-Determination Theory 自我決定理論：Deci 與 Ryan 提出的動機理論，主張內在動機建立在三項基本心理需求滿足之上" },
+      { front: "Autonomy", back: "自主：SDT 三要素之一，學習者感覺自己能決定學習的相關事項" },
+      { front: "Competency", back: "勝任：SDT 三要素之一，學習者感覺自己有能力完成挑戰，透過 Self-Efficacy 具體操作" },
+      { front: "Relatedness", back: "關聯：SDT 三要素之一，學習者感覺與他人（同儕、教師）有意義的連結" },
+      { front: "Self-Efficacy", back: "自我效能：Bandura 提出的概念，個體對自己能否完成特定任務的信念，有四項來源" },
+      { front: "Mastery Experience", back: "精熟經驗：Self-Efficacy 四來源中最強的一項，透過實際成功經驗累積信心" },
+      { front: "Formative Assessment", back: "形成性評量：學習過程中的持續性回饋機制，非總結性高風險評量" }
+    ],
+    m4_q: [
+      { q: "SDT 的三要素不包含下列何者？", opts: ["Autonomy 自主", "Competency 勝任", "Relatedness 關聯", "Anxiety 焦慮"], ans: _A3, exp: "SDT 三要素為 Autonomy、Competency、Relatedness，不含焦慮。" },
+      { q: "在 SDT 三要素中，哪一項最可被教學設計直接介入？", opts: ["Autonomy", "Competency", "Relatedness", "三者皆不可介入"], ans: _A1, exp: "Competency 可透過 Self-Efficacy 的四項來源具體操作，是最可被介入的環節。" },
+      { q: "Self-Efficacy 四項來源中，哪一項是最強的來源？", opts: ["Vicarious Experience", "Verbal Persuasion", "Mastery Experience", "Psychological Status"], ans: _A2, exp: "實際成功的精熟經驗是建構自我效能最強的途徑。" },
+      { q: "為什麼 SDL 不能脫離動機機制？", opts: ["SDL 本來就是動機", "沒有動機的 SDL 會崩塌，學生會選簡單主題、跳過困難單元", "SDL 不需要動機", "動機是次要的"], ans: _A1, exp: "SDL 是行為層，需要動機作為心理層的持續引擎，否則無法持續。" }
+    ],
+
+    // ===== M5 外籍生融入 MSAP =====
+    m5_nav: "5. 外籍生融入 MSAP",
+    m5_title: "外籍生融入：ESP / EAP / MSAP 三層支援",
+    m5_overview: "地方型大學的國際化策略主軸之一是外籍生招收與融入。外籍生在台灣面對的不只是專業學習，還有雙語環境的適應。傳統上以 ESP（English for Specific Purposes）與 EAP（English for Academic Purposes）支援，本講座原創地提出 MSAP（Mandarin for SP/AP）作為對等支援，補上華語環境學習的缺口。",
+    m5_highlights: ["Foreign Students", "ESP / EAP", "MSAP（原創）", "雙語環境", "三層語言支援"],
+    m5_p1: "外籍生在台灣的地方型大學遇到的真正挑戰不只是「課堂英文聽不懂」，而是「校園與生活情境以中文為主，學科內容又以英文為輔」這個雙重夾擊。傳統的支援策略是強化 ESP（學科專業英文，如商管英文、工程英文）與 EAP（學術英文，如論文寫作、學術簡報），這兩者已是國際公認的標準作法。",
+    m5_p2: "但這個標準作法忽略了一個事實：外籍生既需要「英文版的專業／學術支援」，也需要「中文版的專業／學術支援」。一位印尼外籍生來台讀商學院，他既要看懂英文版的財管教科書，也要參與中文授課的市場行銷課程，還要看懂中文的商業新聞。把這部分需求視為「補修中文課」而非「對等的語言支援」，是傳統策略的盲點。",
+    m5_p3: "本講座原創地提出 MSAP（Mandarin for Specific Purposes / Academic Purposes）作為 ESP/EAP 的對等延伸。MSAP 不是「補修中文」，而是「以中文為媒介的學科專業／學術語言支援」。這個提案的價值在於：把外籍生的中文需求從邊緣化的「補救」提升為核心的「學科支援」，與英文支援站在同一個位階。AI 工具的成熟，恰好使 MSAP 的客製化內容生成成為可能。",
+    m5_wrapup: "ESP + EAP + MSAP 的三層架構，是地方型大學國際化策略的具體配套。MSAP 的提出回應了一個長期被忽略的事實：外籍生的雙語需求是對等的，不是一主一輔。AI 工具的普及讓客製化的 MSAP 內容生成不再是高成本的負擔。",
+    m5_terms: [
+      { front: "ESP", back: "English for Specific Purposes 特定領域英文：針對特定學科或產業（商管、工程、醫學）設計的英文支援課程" },
+      { front: "EAP", back: "English for Academic Purposes 學術英文：針對學術寫作、簡報、研究方法等學術活動設計的英文支援課程" },
+      { front: "MSAP", back: "Mandarin for SP/AP 華語版的 ESP/EAP：本講座原創提出，作為外籍生的對等中文學科／學術語言支援" },
+      { front: "Foreign Students", back: "外籍生：在台灣高等教育機構就讀的非本國籍學生，常來自東南亞、中南美、非洲等地區" },
+      { front: "Bilingual Environment", back: "雙語環境：校園與生活中同時存在中文與英文兩種語言情境，要求學生具備雙語能力" },
+      { front: "Equivalent Support", back: "對等支援：把中文與英文的學科支援視為同等重要，而非一主一輔" }
+    ],
+    m5_q: [
+      { q: "ESP 與 EAP 的主要差別是：", opts: ["難度不同", "對象不同（特定領域 vs. 學術活動）", "語言不同", "費用不同"], ans: _A1, exp: "ESP 針對特定學科或產業，EAP 針對學術寫作、簡報等學術活動。" },
+      { q: "MSAP 的核心定位是：", opts: ["補修中文課", "華語版的 ESP/EAP，與英文支援對等", "翻譯服務", "通識課程"], ans: _A1, exp: "MSAP 不是補救課，是與英文支援對等位階的中文學科／學術支援。" },
+      { q: "為什麼地方型大學特別需要 MSAP？", opts: ["經費充足", "外籍生面對校園與生活以中文為主、學科以英文為輔的雙重夾擊", "中文老師多", "政府要求"], ans: _A1, exp: "雙語環境下，外籍生既需要英文支援也需要中文支援。" },
+      { q: "AI 工具如何使 MSAP 變得可行？", opts: ["AI 能翻譯", "AI 能即時生成客製化的中文學科內容，降低成本", "AI 能教中文", "AI 能監考"], ans: _A1, exp: "AI 的客製化生成能力使 MSAP 不再是高成本負擔。" }
+    ],
+
+    // ===== M6 AI Vibe Coding 工具層 =====
+    m6_nav: "6. AI Vibe Coding 工具層",
+    m6_title: "AI 氛圍式編碼：從助手到代理人",
+    m6_overview: "AI Vibe Coding 是 EML 的實踐操作層，運用 Gemini、Claude 等 GenAI 工具，從 Assistant、Copilot 到 Agent 逐步提升 AI 協作自主性，產出 SVG 與 SPA 作為 EML 教材。這個工具層讓「Programming as Language」從理論轉化為實際的教學設計。",
+    m6_highlights: ["Gemini / Claude", "Assistant → Copilot → Agent", "SVG / SPA", "自主性光譜", "教師與學生皆可用"],
+    m6_p1: "AI 工具堆疊主要分為兩大生態：Google 的 Gemini / Gem / NotebookLM，以及 Anthropic 的 Claude / Skills。兩者各有優勢——Gemini 系列在多模態與 Google Workspace 整合上有優勢，Claude 在長文本理解、程式碼產出與 Skills 客製化上有優勢。教師可依任務性質選擇適合的工具，或交替使用以發揮各自所長。",
+    m6_p2: "AI 協作的自主性可分為三層光譜：① Assistant 層級（助手）——學生主導，AI 補語法、查資料、修錯字，AI 負擔約 10% ② Copilot 層級（副駕，半自主）——學生提構想，AI 生成代碼/SVG/文本，學生審閱修改，雙方各約 50% ③ Agent 層級（代理人，全自主）——學生下達高階目標，AI 自主規劃執行並產出完整 SPA，AI 負擔約 80%。三個層級各有適用情境與教學風險。",
+    m6_p3: "Vibe Coding 的核心產出是 SVG 與 SPA。SVG 是可縮放向量圖，適合作為教學圖示、流程圖、概念圖；SPA 是單頁應用程式（網頁），可作為互動學習教材、診斷工具、實驗平台。本講座網頁本身就是一個由 Claude Skills 產出的 SPA 範例，展示了 Agent 層級協作的可能性。重要的是，這些產出不是 AI 取代教師的工作，而是教師用 AI 工具放大教學設計的能力。",
+    m6_wrapup: "AI Vibe Coding 工具層讓 EML 的所有概念落地為可操作的教學設計。但工具的使用必須搭配教學設計者的判斷力——Assistant 層級適合培養基礎能力，Copilot 層級適合協作創作，Agent 層級適合產出大型專案。盲目追求 Agent 層級可能讓學生淪為旁觀者，反而降低學習效益。",
+    m6_terms: [
+      { front: "Vibe Coding", back: "氛圍式編碼：以自然語言意圖驅動 AI 產出程式碼的協作方式，不需精通語法細節" },
+      { front: "Gemini", back: "Google 推出的 GenAI 模型家族，包含 Gemini Pro、Gem 客製化助手、NotebookLM 等工具" },
+      { front: "Claude", back: "Anthropic 推出的 GenAI 模型家族，擅長長文本理解、程式碼產出，並支援 Skills 客製化" },
+      { front: "Assistant Level", back: "助手層級：學生主導，AI 補語法、查資料，AI 負擔約 10%，適合培養基礎能力" },
+      { front: "Copilot Level", back: "副駕層級：學生提構想，AI 生成內容，雙方各約 50%，適合協作創作" },
+      { front: "Agent Level", back: "代理人層級：學生下達目標，AI 自主執行，AI 負擔約 80%，適合大型專案產出" },
+      { front: "SVG", back: "Scalable Vector Graphics 可縮放向量圖：適合作為教學圖示、流程圖、概念圖的輕量化向量格式" },
+      { front: "SPA", back: "Single-Page App 單頁應用程式：在單一網頁中提供完整互動體驗的網頁應用，適合作為互動教材" }
+    ],
+    m6_q: [
+      { q: "AI 協作自主性的三個層級由低到高排序為：", opts: ["Agent → Copilot → Assistant", "Assistant → Copilot → Agent", "Copilot → Assistant → Agent", "Assistant → Agent → Copilot"], ans: _A1, exp: "Assistant（AI 約 10%）→ Copilot（50%）→ Agent（80%）。" },
+      { q: "盲目追求 Agent 層級的潛在風險是：", opts: ["AI 算力不足", "學生淪為旁觀者，學習效益反而下降", "成本太高", "速度太慢"], ans: _A1, exp: "AI 包辦過多會剝奪學生的學習機會，需依任務性質選擇適當層級。" },
+      { q: "SVG 的主要用途是：", opts: ["影片剪輯", "可縮放向量圖，適合作為教學圖示、流程圖、概念圖", "音樂編輯", "資料庫管理"], ans: _A1, exp: "SVG 是輕量化的向量圖格式，適合教學圖示。" },
+      { q: "Vibe Coding 與傳統程式教學的最大差別是：", opts: ["速度差別", "Vibe Coding 以自然語言意圖驅動，不需精通語法細節", "費用差別", "工具差別"], ans: _A1, exp: "Vibe Coding 的核心在於降低程式語法門檻，把程式視為一種 Language。" }
+    ],
+
+    // ===== Lab =====
+    mlab_nav: "7. 互動實驗室",
+    mlab_title: "互動實驗室：五個動手做的工具",
+    mlab_desc: "本實驗室提供五個與本講座主題相關的互動工具，從典範對照到自我動機診斷，讓您親自操作、體驗 EML 概念的具體應用。",
+    mlab_labs: [
+      { title: "EMI ↔ EML 典範對照器", desc: "切換兩種典範，觀察教學焦點、方法、核心問題、風險的差異" },
+      { title: "Language 三類分類練習", desc: "把 8 個項目分類為自然語言、專業語言、程式語言三類，檢核正確率" },
+      { title: "SDT 三要素自我診斷", desc: "回答 6 個題目，獲得您的自主、勝任、關聯三項動機剖面" },
+      { title: "AI 自主性光譜模擬", desc: "切換 Assistant、Copilot、Agent 三個層級，觀察人類與 AI 的負擔分配與教學風險" },
+      { title: "個別化進度視覺化", desc: "拖曳週次滑桿，觀察快、中、慢三位學生在 SDL 下的進度差異" }
+    ],
+
+    // ===== Resources =====
+    mres_nav: "8. 外部學習資源",
+    mres_title: "外部學習資源",
+    mres_desc: "下列資源連結提供 EML、SDT、Self-Efficacy、Vibe Coding 等領域的延伸閱讀與工具，協助您進一步深化本講座的概念。",
+
+    // Footer
+    date: "Version 2026.05.15",
+    copyright: "For Educational Use Only",
+    architect_label: "Architect:",
+    architect_name: "Prof. Shihmin Lo",
+    architect_url: "https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo"
+  },
+  en: {
+    brand: "AIVC4EML",
+    title: "AI Vibe Coding for EML",
+    subtitle: "TESPA 2026 · Prof. Shihmin Lo",
+    nav_modules: "Modules", nav_prev: "← Previous", nav_next: "Next →", nav_home: "Home",
+    key_terms: "Key Terms", flip_prompt: "Click to flip",
+    flip_status: "Read {read} / Shown {shown} / Total {total}",
+    flip_next: "Next", flip_retry: "Restart",
+    audio_read: "Audio Tour",
+    quiz_title: "Module Quiz",
+    quiz_status: "Correct {correct} / Answered {answered} / Total {total}",
+    quiz_next: "Next", quiz_retry: "Retry",
+    submit: "Submit",
+    score: "Score", correct: "Correct", incorrect: "Incorrect", explanation: "Explanation",
+    overview_label: "Overview",
+    highlights_label: "Highlights",
+    deep_dive_label: "Deep Dive",
+    wrapup_label: "Wrap-up",
+
+    // Analytics
+    analytics_title: "Learning Analytics",
+    analytics_desc: "This module records your learning behaviour across all units, including time spent, interaction clicks, quiz accuracy, and flashcard usage. It also provides weak-point analysis and review suggestions. All data is stored locally in your browser.",
+    analytics_form_title: "Learner Profile",
+    analytics_group: "Group", analytics_group_select: "Select", analytics_dept: "Dept/Year",
+    analytics_dept_ph: "e.g., IBS3",
+    analytics_id: "Student ID", analytics_id_ph: "e.g., 113212599",
+    analytics_name_en: "Name (English)", analytics_name_en_ph: "e.g., Shihmin Lo",
+    analytics_name_zh: "Name (Chinese)", analytics_name_zh_ph: "e.g., 駱世民",
+    analytics_export_csv: "Export Learning Log (CSV)",
+    analytics_fill_required: "Please complete the form to unlock export",
+    analytics_refresh_prompt: "Refresh saved records?",
+    group_options: ["G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12","Others"],
+    analytics_total_time: "Total Time", analytics_total_clicks: "Total Clicks",
+    analytics_overall_acc: "Overall Quiz Accuracy",
+    analytics_card_usage: "Flashcard Usage",
+    analytics_module: "Module", analytics_time: "Time Spent",
+    analytics_clicks: "Clicks", analytics_acc: "Accuracy",
+    analytics_correct_ans_total: "Correct / Answered / Total",
+    analytics_cards_read_total: "Read / Total",
+    analytics_no_data: "Not yet attempted", analytics_sec: "s", analytics_times: "x",
+    analytics_progress_title: "Overall Learning Progress",
+    analytics_progress_visited: "Visited",
+    analytics_progress_not_visited: "Not Visited",
+    analytics_progress_quiz_done: "Quiz Done",
+    analytics_wp_title: "Weak-Point Analysis & Review Suggestions",
+    analytics_wp_incorrect: "Incorrect Questions:",
+    analytics_wp_goto: "→ Review This Module",
+    analytics_wp_allpass: "All attempted modules reached 75%+ accuracy. Excellent work!",
+    analytics_wp_saved: "💾 Learning log auto-saved in browser",
+    analytics_wp_clear: "🗑 Clear Log",
+    analytics_wp_clear_confirm: "Are you sure you want to clear all learning records? This cannot be undone.",
+    analytics_wp_tts_intro: "Here is your weak-point analysis.",
+    analytics_wp_tts_module: "Module: {name}, accuracy {acc} percent. Review recommended.",
+    analytics_wp_tts_allpass: "Congratulations! All attempted modules reached seventy-five percent or higher.",
+
+    // ===== M0 Executive Summary =====
+    m0_nav: "0. Executive Summary",
+    m0_title: "AI Vibe Coding for EML",
+    m0_intro: "This talk proposes an integrated pedagogical view: when Taiwan's local universities (such as National Chi Nan University) face a student body of roughly B1 English proficiency, including both local and foreign students, they cannot directly transplant the EMI model used by Taiwan's top-tier universities (NTU, NTHU, NCTU, NCKU). Instead, the paradigm should shift from EMI (English as a Medium of Instruction) to EML (English as a Medium of Learning), moving the centre of gravity from how teachers teach to how students learn. The core methodology enabling this shift is Learning by Doing, sustained by Self-Directed Learning (SDL) as the motivational engine. The theoretical basis comes from Self-Determination Theory (SDT) — Autonomy, Competency, Relatedness — with Competency operationalized via Bandura's four sources of Self-Efficacy through formative and continuous assessment. The pivotal insight of this talk is that Language in EML is not limited to natural languages: professional jargon and programming languages are also forms of Language, and all three map onto GenAI's capacity to process natural human languages. The practical pathway is AI Vibe Coding — using tools such as Gemini and Claude across Assistant, Copilot, and Agent autonomy levels — to produce SVG diagrams and SPA web apps as EML materials. For foreign student integration, MSAP (Mandarin for SP/AP) is proposed as the equivalent Mandarin-side counterpart to ESP and EAP.",
+    m0_why: "Why does this framework matter?",
+    m0_why_desc: "Amid the rise of GenAI and Taiwan's twin pressures of demographic decline and internationalization, local universities need a differentiated pathway distinct from top-tier institutions. This framework offers an operable instructional design blueprint that converts the abstract notion of English-medium teaching into concrete English-driven learning behaviour, with AI tools lowering the barrier for B1 learners.",
+    m0_modules: [
+      { num: "01", title: "Paradigm Shift", desc: "From EMI to EML, from teacher-centred to student-centred, from instruction to learning by doing" },
+      { num: "02", title: "Language Expansion", desc: "Natural, Profession, and Programming — three Language types all processable by GenAI" },
+      { num: "03", title: "GenAI & Four Skills", desc: "Content generation maps onto Input/Output four-skill multimodal learning" },
+      { num: "04", title: "SDL × SDT × Self-Efficacy", desc: "Motivational support chain for self-directed learning: three needs + four efficacy sources" },
+      { num: "05", title: "Foreign Students: MSAP", desc: "Beyond ESP and EAP, MSAP is proposed as the Mandarin-side equivalent support" },
+      { num: "06", title: "AI Vibe Coding Toolstack", desc: "Assistant → Copilot → Agent: the autonomy spectrum and output formats" }
+    ],
+    m0_stats: [
+      { val: "B1", label: "Baseline English Proficiency" },
+      { val: "3", label: "Language Types" },
+      { val: "4", label: "Self-Efficacy Sources" },
+      { val: "3", label: "AI Autonomy Levels" }
+    ],
+    m0_start: "Start Learning →",
+
+    // ===== M1 Paradigm Shift =====
+    m1_nav: "1. Paradigm Shift",
+    m1_title: "EMI → EML: From Teacher-Centred to Student-Centred",
+    m1_overview: "Traditional EMI (English as a Medium of Instruction) focuses on how well teachers deliver lectures in English; EML (English as a Medium of Learning) shifts the focus to how well students learn through English. For B1-level students in local universities, EMI's well-taught lesson does not automatically translate into well-learned outcomes — the design must return to the learner.",
+    m1_highlights: ["EMI vs. EML", "Student-Centred", "Learning by Doing", "B1 Learner Context", "Local University Position"],
+    m1_p1: "The core difference between EMI and EML is not the level of English proficiency but the focal point of instructional design. EMI treats the teacher as the principal English speaker, assuming students can keep pace; EML treats the teacher as the architect of learning activities, assuming students gradually build English competence through doing. This paradigm shift echoes the broader pedagogical movement from behaviourism to constructivism over the past three decades.",
+    m1_p2: "In Taiwan's higher education, top-tier universities such as NTU, NTHU, NCTU and NCKU enrol students whose average English proficiency comfortably exceeds B1, allowing traditional high-intensity EMI lectures. But local universities such as National Chi Nan University, located in rural Puli, Nantou, with daily life conducted mostly in Mandarin, find that imposing a top-tier EMI model often leaves students unable to follow, unable to learn, and disengaged.",
+    m1_p3: "EML's remedy is to return ownership of learning to students: they choose their pace, produce real artefacts through hands-on work, and support each other in groups. The teacher's role shifts from English lecturer to scaffolding architect — designing tasks, providing tools, giving feedback. The arrival of AI strengthens this role transition further, since AI can absorb much of the individualized tutoring load.",
+    m1_wrapup: "EML is not the opposite of EMI but its evolution. When student profiles, learning technologies, and pedagogical theories all evolve together, shifting the centre from teaching to learning becomes inevitable. Local universities are in fact the ideal laboratories for EML, lacking both the elite English talent pool and the institutional inertia of top-tier schools.",
+    m1_terms: [
+      { front: "EMI", back: "English as a Medium of Instruction — focus on the teacher delivering course content in English" },
+      { front: "EML", back: "English as a Medium of Learning — focus on the student conducting learning activities through English" },
+      { front: "Student-Centred", back: "Designing from the learner's needs, pace, and interests rather than from the teacher's lecture flow" },
+      { front: "Learning by Doing", back: "Building competence through producing real artefacts via hands-on work rather than passive listening" },
+      { front: "B1 Level", back: "CEFR intermediate threshold: can grasp familiar topics, handle travel, write simple connected text" },
+      { front: "Local University", back: "Universities whose campus and student body draw mainly from a specific regional area, contrasted with top-tier national institutions" }
+    ],
+    m1_q: [
+      { q: "The core difference between EMI and EML lies in:", opts: ["The level of English proficiency", "Whether instructional design centres on the teacher or the student", "The textbook language", "The teacher's credentials"], ans: _A1, exp: "EMI centres on how teachers teach; EML centres on how students learn — this is a paradigm difference, not a proficiency difference." },
+      { q: "Why is the top-tier EMI model unsuitable for local universities?", opts: ["Insufficient funding", "B1-level students struggle to follow high-intensity English lectures", "Insufficient faculty", "Inadequate classroom equipment"], ans: _A1, exp: "B1 learners cannot easily absorb high-intensity English lectures and need a different instructional design." },
+      { q: "In EML, the teacher's primary role becomes:", opts: ["English lecturer", "Scaffolding architect", "Exam setter", "Translator"], ans: _A1, exp: "EML teachers design tasks, provide tools, and give feedback rather than purely lecturing." },
+      { q: "The essence of Learning by Doing is:", opts: ["Memorizing English vocabulary", "Exam-driven repetitive practice", "Building competence through producing real artefacts", "Listening to lectures"], ans: _A2, exp: "Learning by Doing emphasizes hands-on production as the learning core." }
+    ],
+
+    // ===== M2 Language Expansion =====
+    m2_nav: "2. Language Expansion",
+    m2_title: "Three Types of Language: Natural, Profession, Programming",
+    m2_overview: "This is the pivotal insight of the talk: under EML, Language should not be restricted to natural languages. Professional jargon is a Language; programming languages are Languages; all three can be processed, generated, and assisted by GenAI. This conceptual pivot extends EML from English teaching alone to cross-disciplinary language-capability building.",
+    m2_highlights: ["Natural Language", "Profession Language", "Programming Language", "GenAI Processes All Three", "Pivot Insight"],
+    m2_p1: "Traditional EMI discussions focus almost exclusively on natural languages (English, Mandarin), but in 21st-century higher education the Languages students actually need to master extend far beyond that. Business students must read financial statements, IPO prospectuses, and ESG reports — highly structured professional Languages. STEM students must write Python, HTML, and SQL — bona-fide programming languages. Bringing all three into EML's scope is necessary to address real learning needs.",
+    m2_p2: "More importantly, these three Language types share a common property: all are processable by GenAI. GenAI can handle English, Mandarin, Python, and HTML because, computationally, they are all token sequences. This technical reality grants EML's expanded definition a solid foundation — when we use GenAI to support natural, professional, and programming languages simultaneously, we are in fact using one tool on one class of data.",
+    m2_p3: "Vibe Coding is built on this very pivot: students need not master Python's every syntactic detail; they describe in natural language what they want, and AI translates that natural language into programming language, producing runnable code. This transforms programming from a barrier into another Language on the same learning footing as English or Mandarin.",
+    m2_wrapup: "Extending Language to Natural, Profession, and Programming is the pivotal concept of this framework. It explains why GenAI can support all three types of learning and why Vibe Coding lowers the programming barrier. Once students accept programming as a Language, their fear of code diminishes substantially.",
+    m2_terms: [
+      { front: "Natural Language", back: "Human-evolved communication languages such as English, Mandarin, Japanese — the EMI/EML medium itself" },
+      { front: "Profession Language", back: "Highly structured terminology systems within specific disciplines or industries, e.g., business, accounting, marketing jargon" },
+      { front: "Programming Language", back: "Formal languages designed to instruct computers, e.g., Python, HTML, JavaScript" },
+      { front: "Token Sequence", back: "The basic unit GenAI processes; English, Mandarin, and code are all homogeneous token sequences to AI" },
+      { front: "Vibe Coding", back: "A collaborative coding style where natural-language intent drives AI to produce runnable code without mastering syntax" },
+      { front: "Domain Pivot", back: "The pivotal idea of treating three Language types as homogeneous learning objects, making GenAI a cross-disciplinary tool" }
+    ],
+    m2_q: [
+      { q: "Which of the following is NOT one of the three Language types in this framework?", opts: ["Natural Language (English)", "Profession Language (business jargon)", "Programming Language (Python)", "Body Language (gestures)"], ans: _A3, exp: "The three types are Natural, Profession, and Programming — body language is not included." },
+      { q: "Why can GenAI support all three Language types simultaneously?", opts: ["AI has learned every language", "All three are token sequences to AI — homogeneous in nature", "AI has translation features", "AI is fast"], ans: _A1, exp: "Computationally, all three are token sequences, which is why GenAI handles them uniformly." },
+      { q: "The essence of Vibe Coding is:", opts: ["Mastering every syntax rule", "Driving AI to produce runnable code via natural-language intent", "Avoiding code entirely", "Drag-and-drop visual programming"], ans: _A1, exp: "Vibe Coding lets students describe intent in natural language; AI translates to code." },
+      { q: "The pedagogical significance of viewing Programming as a Language is:", opts: ["Turning students into engineers", "Lowering fear of code, placing it on the same learning footing as English", "Replacing English learning", "Simplifying syntax"], ans: _A1, exp: "It is a conceptual reframe that lowers psychological barriers." }
+    ],
+    // ===== M3 GenAI ↔ Four Skills =====
+    m3_nav: "3. GenAI ↔ Four Skills",
+    m3_title: "GenAI Content Generation Mapped to the Four Language Skills",
+    m3_overview: "GenAI's core capability is Content Generation, producing Text, Speech, Image, and Video. These four output modalities map precisely onto the four language skills: Listening and Reading (Input-oriented) plus Speaking and Writing (Output-oriented). GenAI thus becomes a multimodal engine for EML four-skill training.",
+    m3_highlights: ["Content Generation", "Text / Speech / Image / Video", "Input-oriented", "Output-oriented", "Multimodal Learning"],
+    m3_p1: "GenAI's nature is Content Generation, built on its understanding of Natural Human Languages. When we juxtapose its four output modalities (Text, Speech, Image, Video) with the four language skills (Listening, Speaking, Reading, Writing), an elegant mapping emerges: Text covers Reading and Writing, Speech covers Listening and Speaking, while Image and Video provide multimodal visual support.",
+    m3_p2: "In EML practice, the four skills further split into Input-oriented (Listening, Reading) and Output-oriented (Speaking, Writing). Traditional English instruction often emphasizes Input while neglecting Output — the root cause of Taiwanese students being able to read and listen but reluctant to speak or write. GenAI, by generating instant individualized feedback and examples, fills precisely this Output-training gap.",
+    m3_p3: "Going further, GenAI generates not merely pre-existing human content but also content customized in real time to the learner's state and need. A B1 student wishing to read about ESG can have GenAI instantly rewrite a high-level academic article into a B1-level equivalent, providing key-term glosses, audio, and supporting images. This instant, individualized, multimodal support is something traditional materials cannot offer.",
+    m3_wrapup: "The mapping between GenAI's four generation modalities and the four language skills is the technical foundation that lets EML actually land. Understanding this mapping lets teachers design tasks precisely: Speech generation for listening, Text generation for writing models and feedback, Image and Video for topic comprehension.",
+    m3_terms: [
+      { front: "Content Generation", back: "GenAI's core capability of producing text, speech, image, and video on demand" },
+      { front: "Natural Human Languages", back: "Human-evolved communication languages, the primary training data for GenAI" },
+      { front: "Input-oriented Skills", back: "Listening and Reading — the receptive side of language ability" },
+      { front: "Output-oriented Skills", back: "Speaking and Writing — the productive side of language ability" },
+      { front: "Multimodal", back: "Learning that combines text, speech, image, and video to deepen comprehension" },
+      { front: "Real-time Adaptation", back: "GenAI's ability to adjust content difficulty and form on the fly to learner needs" }
+    ],
+    m3_q: [
+      { q: "Which of the following is NOT a GenAI output modality?", opts: ["Text", "Speech", "Smell", "Video"], ans: _A2, exp: "GenAI currently generates Text, Speech, Image, and Video — not smell." },
+      { q: "The two Input-oriented skills are:", opts: ["Speaking, Writing", "Listening, Reading", "Reading, Writing", "Listening, Speaking"], ans: _A1, exp: "Input = Listening + Reading; Output = Speaking + Writing." },
+      { q: "Why does GenAI particularly strengthen Output training?", opts: ["AI speaks and writes for students", "AI provides instant individualized feedback and examples", "AI replaces teachers", "AI is fast"], ans: _A1, exp: "Individualized, immediate feedback is what Output training most needs and what traditional materials lack." },
+      { q: "For a B1 student, the best GenAI handling of an academic ESG article is:", opts: ["Hand over the original text", "Instantly rewrite to B1 level with glosses, audio, and images", "Translate into Mandarin", "Delete difficult words"], ans: _A1, exp: "Instant, individualized, multimodal rewriting is GenAI's strongest function and aligns with EML." }
+    ],
+
+    // ===== M4 SDL × SDT × Self-Efficacy =====
+    m4_nav: "4. Motivational Support Chain",
+    m4_title: "SDL × SDT × Self-Efficacy: Theoretical Pillars of Learning Motivation",
+    m4_overview: "Learning by Doing requires active student engagement, which calls for Self-Directed Learning (SDL) as the behavioural layer. SDL in turn requires Motivation as its psychological engine, grounded theoretically in Self-Determination Theory (SDT) — Autonomy, Competency, Relatedness. Competency is then operationalized through Bandura's four sources of Self-Efficacy.",
+    m4_highlights: ["SDL", "SDT Three Needs", "Autonomy / Competency / Relatedness", "Self-Efficacy Four Sources", "Mastery Experience"],
+    m4_p1: "Self-Directed Learning (SDL) is the student-side concrete expression of EML: learners choose their own topics, pace, schedule, and assessment methods. But SDL is not laissez-faire — it requires powerful motivation as a sustaining engine. SDL without motivation collapses quickly: students pick the easiest topics, skip hard units, and skip reports. SDL's success therefore depends almost entirely on motivation design.",
+    m4_p2: "Self-Determination Theory (SDT), proposed by Deci and Ryan, is the dominant contemporary motivation framework. SDT holds that intrinsic motivation rests on satisfying three basic psychological needs: ① Autonomy (feeling I can decide), ② Competency (feeling I am capable), ③ Relatedness (feeling connected to others). All three are essential. In EML course design, Autonomy maps onto elective-vs-required choices and individualized progress/pace; Relatedness maps onto small-group community; Competency is the most directly addressable through instructional design.",
+    m4_p3: "Bandura's Self-Efficacy theory provides the operational path for Competency. Self-Efficacy has four sources: ① Mastery Experience (the strongest source), ② Vicarious Experience (seeing peers succeed), ③ Verbal Persuasion (teacher encouragement), ④ Psychological Status. Among these, Mastery Experience is built through continuous, formative, small-stakes assessments — the element most directly under teacher control.",
+    m4_wrapup: "SDL → Motivation → SDT three needs → Self-Efficacy four sources → Mastery Experience: this chain is the psychological foundation that keeps EML running. Designers who promote SDL without addressing the underlying motivational mechanisms will see SDL degenerate into a slogan.",
+    m4_terms: [
+      { front: "SDL", back: "Self-Directed Learning — learners actively choose topics, pace, schedule, and assessment" },
+      { front: "SDT", back: "Self-Determination Theory by Deci and Ryan — intrinsic motivation rests on three psychological needs" },
+      { front: "Autonomy", back: "SDT need: feeling one can decide matters in one's learning" },
+      { front: "Competency", back: "SDT need: feeling capable of meeting challenges; operationalized via Self-Efficacy" },
+      { front: "Relatedness", back: "SDT need: feeling meaningful connection to peers and teachers" },
+      { front: "Self-Efficacy", back: "Bandura's concept of one's belief in completing a specific task; built from four sources" },
+      { front: "Mastery Experience", back: "The strongest of the four Self-Efficacy sources — confidence built from actual successes" },
+      { front: "Formative Assessment", back: "Continuous feedback during learning, contrasted with summative high-stakes assessment" }
+    ],
+    m4_q: [
+      { q: "Which is NOT among the three SDT needs?", opts: ["Autonomy", "Competency", "Relatedness", "Anxiety"], ans: _A3, exp: "SDT names Autonomy, Competency, Relatedness — anxiety is not included." },
+      { q: "Which SDT need is most directly addressable through instructional design?", opts: ["Autonomy", "Competency", "Relatedness", "None can be addressed"], ans: _A1, exp: "Competency can be operationalized via Self-Efficacy's four sources — the most actionable need." },
+      { q: "Which is the strongest source of Self-Efficacy?", opts: ["Vicarious Experience", "Verbal Persuasion", "Mastery Experience", "Psychological Status"], ans: _A2, exp: "Actual successful Mastery Experience is the strongest source." },
+      { q: "Why must SDL not be detached from motivational mechanisms?", opts: ["SDL is itself motivation", "SDL without motivation collapses — students pick easy topics, skip hard units", "SDL needs no motivation", "Motivation is secondary"], ans: _A1, exp: "SDL is the behavioural layer that needs motivation as its psychological engine." }
+    ],
+
+    // ===== M5 Foreign Student Integration MSAP =====
+    m5_nav: "5. Foreign Students & MSAP",
+    m5_title: "Foreign Student Integration: ESP / EAP / MSAP Three-Tier Support",
+    m5_overview: "Foreign student recruitment and integration is a core internationalization strategy for local universities. Foreign students in Taiwan face not just disciplinary learning in English but also adaptation to a bilingual environment. Traditional support uses ESP (English for Specific Purposes) and EAP (English for Academic Purposes); this talk originally proposes MSAP (Mandarin for SP/AP) as an equivalent Mandarin-side support, filling the gap in disciplinary support through Mandarin.",
+    m5_highlights: ["Foreign Students", "ESP / EAP", "MSAP (original)", "Bilingual Environment", "Three-Tier Language Support"],
+    m5_p1: "The real challenge foreign students face at Taiwan's local universities is not merely classroom English comprehension but the double squeeze of a campus where daily life is conducted mainly in Mandarin while disciplinary content arrives mainly in English. The standard support strategy strengthens ESP (discipline-specific English: business English, engineering English) and EAP (academic English: thesis writing, academic presentations) — internationally recognized best practice.",
+    m5_p2: "But this standard strategy overlooks a fact: foreign students need both English-language disciplinary/academic support and Mandarin-language disciplinary/academic support. An Indonesian student studying business in Taiwan must comprehend English-medium finance textbooks, participate in Mandarin-medium marketing courses, and follow Mandarin business news. Treating this need as remedial Chinese class rather than equivalent linguistic support is the blind spot of traditional strategy.",
+    m5_p3: "This talk originally proposes MSAP (Mandarin for Specific Purposes / Academic Purposes) as the equivalent extension of ESP/EAP. MSAP is not remedial Chinese; it is disciplinary and academic language support delivered through Mandarin. The proposal's value is in promoting foreign students' Mandarin needs from marginal remediation to core disciplinary support — on equal footing with English support. The maturing of AI tools makes customized MSAP content generation feasible at last.",
+    m5_wrapup: "The ESP + EAP + MSAP three-tier architecture is the concrete companion to local universities' internationalization strategy. MSAP responds to a long-overlooked fact: foreign students' bilingual needs are equivalent, not primary-vs-secondary. AI-tool ubiquity now removes customized MSAP content as a cost burden.",
+    m5_terms: [
+      { front: "ESP", back: "English for Specific Purposes — English support targeting specific disciplines or industries (business, engineering, medicine)" },
+      { front: "EAP", back: "English for Academic Purposes — English support for academic writing, presentation, and research" },
+      { front: "MSAP", back: "Mandarin for SP/AP — originally proposed in this talk as the equivalent Mandarin-side disciplinary/academic support" },
+      { front: "Foreign Students", back: "Non-citizen students enrolled in Taiwan's higher education, often from Southeast Asia, Latin America, Africa" },
+      { front: "Bilingual Environment", back: "An environment where both Mandarin and English coexist, demanding bilingual competence" },
+      { front: "Equivalent Support", back: "Treating Mandarin and English disciplinary support as equally important, not primary-vs-secondary" }
+    ],
+    m5_q: [
+      { q: "The main difference between ESP and EAP is:", opts: ["Difficulty level", "Target focus: specific disciplines vs. academic activities", "Language used", "Cost"], ans: _A1, exp: "ESP targets specific disciplines/industries; EAP targets academic activities like writing and presenting." },
+      { q: "The core positioning of MSAP is:", opts: ["Remedial Chinese class", "Mandarin equivalent of ESP/EAP, on par with English support", "Translation service", "General-education course"], ans: _A1, exp: "MSAP is not remedial; it is equivalent disciplinary/academic Mandarin support." },
+      { q: "Why do local universities particularly need MSAP?", opts: ["Plenty of funding", "Foreign students face the double squeeze of Mandarin campus life and English-medium content", "Many Chinese teachers", "Government mandate"], ans: _A1, exp: "The bilingual environment requires both English and Mandarin support." },
+      { q: "How do AI tools make MSAP feasible?", opts: ["AI can translate", "AI generates customized Mandarin disciplinary content in real time, lowering cost", "AI can teach Chinese", "AI proctors exams"], ans: _A1, exp: "AI's customized generation capability removes MSAP's traditional cost burden." }
+    ],
+
+    // ===== M6 AI Vibe Coding Toolstack =====
+    m6_nav: "6. AI Vibe Coding Toolstack",
+    m6_title: "AI Vibe Coding: From Assistant to Agent",
+    m6_overview: "AI Vibe Coding is the operational layer for EML, using GenAI tools like Gemini and Claude across Assistant, Copilot, and Agent levels of autonomy, producing SVG and SPA as EML materials. This toolstack converts Programming-as-Language from theory into concrete instructional design.",
+    m6_highlights: ["Gemini / Claude", "Assistant → Copilot → Agent", "SVG / SPA", "Autonomy Spectrum", "For Teachers and Students"],
+    m6_p1: "The AI tool stack splits into two main ecosystems: Google's Gemini / Gem / NotebookLM and Anthropic's Claude / Skills. Each has strengths — Gemini excels at multimodal and Google Workspace integration; Claude excels at long-context reasoning, code generation, and Skills customization. Teachers can choose by task or alternate to leverage each ecosystem's strengths.",
+    m6_p2: "AI collaboration autonomy spans three levels: ① Assistant — student-led, AI fixes syntax, looks things up, corrects typos, AI load roughly 10%. ② Copilot — semi-autonomous, student proposes, AI generates code/SVG/text, student reviews; load roughly 50/50. ③ Agent — fully autonomous, student sets high-level goals, AI plans and executes to deliver a complete SPA; AI load roughly 80%. Each level has its appropriate scenarios and pedagogical risks.",
+    m6_p3: "Vibe Coding's core outputs are SVG and SPA. SVG (scalable vector graphics) suits instructional diagrams, flowcharts, and concept maps. SPA (single-page applications) can serve as interactive materials, diagnostic tools, or experiment platforms. This very webpage is itself an SPA produced by Claude Skills, demonstrating Agent-level collaboration. Importantly, these outputs are not AI replacing teachers but teachers amplifying their instructional design capacity through AI.",
+    m6_wrapup: "The AI Vibe Coding toolstack grounds every EML concept in operable instructional design. But tool use must accompany the designer's judgement — Assistant suits foundational skill-building, Copilot suits co-creation, Agent suits large project output. Blindly pushing for Agent-level may reduce students to spectators and harm learning outcomes.",
+    m6_terms: [
+      { front: "Vibe Coding", back: "Natural-language-intent-driven collaborative coding with AI, requiring no syntactic mastery" },
+      { front: "Gemini", back: "Google's GenAI model family, including Gemini Pro, Gem custom assistants, and NotebookLM" },
+      { front: "Claude", back: "Anthropic's GenAI model family, strong in long-context reasoning, code generation, and Skills customization" },
+      { front: "Assistant Level", back: "Student-led; AI handles syntax and lookups; AI load roughly 10%; suits foundational skill-building" },
+      { front: "Copilot Level", back: "Semi-autonomous; student proposes, AI generates, student reviews; roughly 50/50 load; suits co-creation" },
+      { front: "Agent Level", back: "Fully autonomous; student sets goal, AI executes; AI load roughly 80%; suits large project output" },
+      { front: "SVG", back: "Scalable Vector Graphics — lightweight vector format suited to instructional diagrams" },
+      { front: "SPA", back: "Single-Page Application — a webpage delivering full interactive experience in one page, ideal for interactive materials" }
+    ],
+    m6_q: [
+      { q: "The three AI autonomy levels from low to high are:", opts: ["Agent → Copilot → Assistant", "Assistant → Copilot → Agent", "Copilot → Assistant → Agent", "Assistant → Agent → Copilot"], ans: _A1, exp: "Assistant (~10% AI) → Copilot (50%) → Agent (80%)." },
+      { q: "The risk of blindly pushing for Agent level is:", opts: ["Insufficient compute", "Students become spectators; learning outcomes drop", "Too expensive", "Too slow"], ans: _A1, exp: "Over-delegation to AI deprives students of learning opportunity; choose level by task." },
+      { q: "SVG's primary use is:", opts: ["Video editing", "Scalable vector graphics for diagrams, flowcharts, concept maps", "Music editing", "Database management"], ans: _A1, exp: "SVG is a lightweight vector format suited to instructional graphics." },
+      { q: "The largest difference between Vibe Coding and traditional code teaching is:", opts: ["Speed", "Vibe Coding is driven by natural-language intent, requiring no syntactic mastery", "Cost", "Tools"], ans: _A1, exp: "Vibe Coding lowers the syntactic barrier by treating code as another Language." }
+    ],
+
+    // ===== Lab =====
+    mlab_nav: "7. Interactive Lab",
+    mlab_title: "Interactive Lab: Five Hands-On Tools",
+    mlab_desc: "This lab offers five interactive tools tied to the talk's themes — from paradigm toggling to self-motivation diagnostics — letting you operate and experience EML concepts concretely.",
+    mlab_labs: [
+      { title: "EMI ↔ EML Paradigm Toggle", desc: "Switch between the two paradigms; observe differences in focus, method, central question, and risk" },
+      { title: "Three-Type Language Classifier", desc: "Classify 8 items into Natural / Profession / Programming categories; check your accuracy" },
+      { title: "SDT Three-Need Self-Diagnostic", desc: "Answer 6 items to obtain your Autonomy / Competency / Relatedness motivation profile" },
+      { title: "AI Autonomy Spectrum Simulator", desc: "Toggle between Assistant / Copilot / Agent; see load allocation and pedagogical risks" },
+      { title: "Individualized Pace Visualizer", desc: "Drag the week slider to see how SDL allows fast / mid / slow students to progress differently" }
+    ],
+
+    // ===== Resources =====
+    mres_nav: "8. Learning Resources",
+    mres_title: "External Learning Resources",
+    mres_desc: "The links below provide extended reading and tools for EML, SDT, Self-Efficacy, and Vibe Coding — helping you deepen the concepts in this talk.",
+
+    // Footer
+    date: "Version 2026.05.15",
+    copyright: "For Educational Use Only",
+    architect_label: "Architect:",
+    architect_name: "Prof. Shihmin Lo",
+    architect_url: "https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo"
+  }
+};
+/* ============ 模組 SVG 圖示元件 ============ */
+
+// M1 SVG: Paradigm Shift Arrow
+const SVG_M1 = ({lang, isDark}) => {
+  const fg = isDark ? '#D8C3A5' : '#004030';
+  const accent = isDark ? '#D8C3A5' : '#004030';
+  const bg = isDark ? '#1e293b' : '#ffffff';
+  const t1 = lang==='zh'?'EMI · 教師為中心':'EMI · Teacher-Centred';
+  const t2 = lang==='zh'?'EML · 學生為中心':'EML · Student-Centred';
+  const l1 = lang==='zh'?'Instruction 教導':'Instruction';
+  const l2 = lang==='zh'?'Learning by Doing 做中學':'Learning by Doing';
+  return (
+    <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-3xl">
+      <rect width="700" height="240" fill={bg} rx="8"/>
+      <rect x="20" y="60" width="260" height="120" rx="8" fill="none" stroke={fg} strokeWidth="2"/>
+      <text x="150" y="105" textAnchor="middle" fontSize="16" fontWeight="700" fill={fg} fontFamily="Inter,sans-serif">{t1}</text>
+      <text x="150" y="135" textAnchor="middle" fontSize="13" fill={fg} opacity="0.7">{l1}</text>
+      <text x="150" y="160" textAnchor="middle" fontSize="11" fill={fg} opacity="0.6">How to teach</text>
+      <path d="M295 120 L405 120" stroke={accent} strokeWidth="3" fill="none" markerEnd="url(#arr1)"/>
+      <defs><marker id="arr1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 9 3, 0 6" fill={accent}/></marker></defs>
+      <rect x="420" y="60" width="260" height="120" rx="8" fill={accent} stroke={accent} strokeWidth="2"/>
+      <text x="550" y="105" textAnchor="middle" fontSize="16" fontWeight="700" fill={isDark?'#004030':'#ffffff'} fontFamily="Inter,sans-serif">{t2}</text>
+      <text x="550" y="135" textAnchor="middle" fontSize="13" fill={isDark?'#004030':'#ffffff'} opacity="0.85">{l2}</text>
+      <text x="550" y="160" textAnchor="middle" fontSize="11" fill={isDark?'#004030':'#ffffff'} opacity="0.7">How students learn</text>
+      <text x="350" y="30" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg} fontFamily="Merriweather,serif">{lang==='zh'?'典範轉移 Paradigm Shift':'Paradigm Shift'}</text>
+      <text x="350" y="220" textAnchor="middle" fontSize="11" fill={fg} opacity="0.6" fontStyle="italic">{lang==='zh'?'從教得好 → 學得會':'From taught-well → learned-well'}</text>
+    </svg>
+  );
+};
+
+// M2 SVG: Three Language Types
+const SVG_M2 = ({lang, isDark}) => {
+  const fg = isDark ? '#D8C3A5' : '#004030';
+  const bg = isDark ? '#1e293b' : '#ffffff';
+  const types = lang==='zh' ? [
+    {t:'Natural', ch:'自然語言', items:'English / Mandarin', c:'#10b981'},
+    {t:'Profession', ch:'專業語言', items:'Business / Mgmt', c:'#D8C3A5'},
+    {t:'Programming', ch:'程式語言', items:'Python / HTML', c:'#0ea5e9'}
+  ] : [
+    {t:'Natural', ch:'Natural Language', items:'English / Mandarin', c:'#10b981'},
+    {t:'Profession', ch:'Profession Language', items:'Business / Mgmt', c:'#D8C3A5'},
+    {t:'Programming', ch:'Programming Language', items:'Python / HTML', c:'#0ea5e9'}
+  ];
+  return (
+    <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-3xl">
+      <rect width="700" height="280" fill={bg} rx="8"/>
+      <text x="350" y="30" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg} fontFamily="Merriweather,serif">{lang==='zh'?'Language 的三類擴展定義':'Three-Type Language Expansion'}</text>
+      {types.map((tp,i)=>(
+        <g key={i} transform={`translate(${30+i*223}, 60)`}>
+          <rect width="210" height="160" rx="8" fill={tp.c} opacity="0.15" stroke={tp.c} strokeWidth="2"/>
+          <rect width="210" height="30" rx="8" fill={tp.c}/>
+          <text x="105" y="20" textAnchor="middle" fontSize="13" fontWeight="700" fill="#004030">{tp.t}</text>
+          <text x="105" y="60" textAnchor="middle" fontSize="14" fontWeight="600" fill={fg}>{tp.ch}</text>
+          <text x="105" y="95" textAnchor="middle" fontSize="11" fill={fg} opacity="0.7">{tp.items}</text>
+          <text x="105" y="130" textAnchor="middle" fontSize="20" fill={fg}>↓</text>
+        </g>
+      ))}
+      <rect x="180" y="235" width="340" height="30" rx="15" fill={fg}/>
+      <text x="350" y="255" textAnchor="middle" fontSize="13" fontWeight="700" fill={bg}>GenAI · Content Generation</text>
+    </svg>
+  );
+};
+
+// M3 SVG: GenAI ↔ 4 Skills
+const SVG_M3 = ({lang, isDark}) => {
+  const fg = isDark ? '#D8C3A5' : '#004030';
+  const bg = isDark ? '#1e293b' : '#ffffff';
+  const ai = lang==='zh' ? ['Text 文字','Speech 語音','Image 圖像','Video 影片'] : ['Text','Speech','Image','Video'];
+  const sk = lang==='zh' ? ['Reading 讀','Listening 聽','—',''] : ['Reading','Listening','—',''];
+  const sk2 = lang==='zh' ? ['Writing 寫','Speaking 說','視覺輔助','多模態整合'] : ['Writing','Speaking','Visual Aid','Multimodal'];
+  return (
+    <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-3xl">
+      <rect width="700" height="320" fill={bg} rx="8"/>
+      <text x="350" y="28" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg} fontFamily="Merriweather,serif">{lang==='zh'?'GenAI 生成模態 ↔ 語言四技能':'GenAI Modalities ↔ Four Skills'}</text>
+      <text x="120" y="55" textAnchor="middle" fontSize="12" fontWeight="700" fill={fg}>GenAI</text>
+      <text x="350" y="55" textAnchor="middle" fontSize="12" fontWeight="700" fill={fg} opacity="0.6">{lang==='zh'?'(Input/Output)':'(Input/Output)'}</text>
+      <text x="580" y="55" textAnchor="middle" fontSize="12" fontWeight="700" fill={fg}>{lang==='zh'?'四技能':'4 Skills'}</text>
+      {ai.map((a,i)=>(
+        <g key={i} transform={`translate(0, ${70+i*60})`}>
+          <rect x="40" width="160" height="40" rx="6" fill={fg} opacity="0.1" stroke={fg} strokeWidth="1.5"/>
+          <text x="120" y="25" textAnchor="middle" fontSize="13" fontWeight="600" fill={fg}>{a}</text>
+          <line x1="205" y1="20" x2="295" y2="20" stroke={fg} strokeWidth="1.5" markerEnd="url(#a3a)" markerStart="url(#a3b)"/>
+          <text x="350" y="25" textAnchor="middle" fontSize="11" fill={fg} opacity="0.7">{i<2?(lang==='zh'?'雙向對應':'bi-directional'):(lang==='zh'?'支援':'support')}</text>
+          <line x1="405" y1="20" x2="495" y2="20" stroke={fg} strokeWidth="1.5" markerEnd="url(#a3a)"/>
+          <rect x="500" width="160" height="40" rx="6" fill="#D8C3A5" opacity="0.3" stroke={fg} strokeWidth="1.5"/>
+          <text x="580" y="18" textAnchor="middle" fontSize="11" fontWeight="600" fill={fg}>{sk[i]}</text>
+          <text x="580" y="32" textAnchor="middle" fontSize="11" fontWeight="600" fill={fg}>{sk2[i]}</text>
+        </g>
+      ))}
+      <defs>
+        <marker id="a3a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><polygon points="0 0, 7 3, 0 6" fill={fg}/></marker>
+        <marker id="a3b" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto-start-reverse"><polygon points="0 0, 7 3, 0 6" fill={fg}/></marker>
+      </defs>
+    </svg>
+  );
+};
+
+// M4 SVG: Motivation Chain
+const SVG_M4 = ({lang, isDark}) => {
+  const fg = isDark ? '#D8C3A5' : '#004030';
+  const bg = isDark ? '#1e293b' : '#ffffff';
+  return (
+    <svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-3xl">
+      <rect width="700" height="360" fill={bg} rx="8"/>
+      <text x="350" y="28" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg} fontFamily="Merriweather,serif">{lang==='zh'?'SDL → SDT → Self-Efficacy 動機支撐鏈':'Motivation Support Chain'}</text>
+      <rect x="240" y="50" width="220" height="42" rx="6" fill={fg}/>
+      <text x="350" y="76" textAnchor="middle" fontSize="14" fontWeight="700" fill={bg}>SDL · {lang==='zh'?'自我導向學習':'Self-Directed Learning'}</text>
+      <line x1="350" y1="98" x2="350" y2="122" stroke={fg} strokeWidth="2" markerEnd="url(#a4a)"/>
+      <rect x="270" y="125" width="160" height="32" rx="6" fill="none" stroke={fg} strokeWidth="2"/>
+      <text x="350" y="146" textAnchor="middle" fontSize="13" fontWeight="600" fill={fg}>{lang==='zh'?'學習動機 Motivation':'Motivation'}</text>
+      <line x1="350" y1="163" x2="350" y2="187" stroke={fg} strokeWidth="2" markerEnd="url(#a4a)"/>
+      <rect x="240" y="190" width="220" height="32" rx="6" fill="#D8C3A5" opacity="0.3" stroke={fg} strokeWidth="2"/>
+      <text x="350" y="211" textAnchor="middle" fontSize="13" fontWeight="700" fill={fg}>SDT · {lang==='zh'?'自我決定理論':'Self-Determination Theory'}</text>
+      <g transform="translate(0, 240)">
+        <rect x="40" width="180" height="60" rx="6" fill={fg} opacity="0.1" stroke={fg} strokeWidth="1.5"/>
+        <text x="130" y="22" textAnchor="middle" fontSize="12" fontWeight="700" fill={fg}>① Autonomy</text>
+        <text x="130" y="42" textAnchor="middle" fontSize="11" fill={fg} opacity="0.8">{lang==='zh'?'自主':'自主'}</text>
+        <rect x="260" width="180" height="60" rx="6" fill="#D8C3A5" opacity="0.4" stroke="#D8C3A5" strokeWidth="2"/>
+        <text x="350" y="22" textAnchor="middle" fontSize="12" fontWeight="700" fill={fg}>② Competency ⭐</text>
+        <text x="350" y="42" textAnchor="middle" fontSize="10" fill={fg} opacity="0.8">{lang==='zh'?'勝任 · Self-Efficacy':'勝任 · Self-Efficacy'}</text>
+        <rect x="480" width="180" height="60" rx="6" fill={fg} opacity="0.1" stroke={fg} strokeWidth="1.5"/>
+        <text x="570" y="22" textAnchor="middle" fontSize="12" fontWeight="700" fill={fg}>③ Relatedness</text>
+        <text x="570" y="42" textAnchor="middle" fontSize="11" fill={fg} opacity="0.8">{lang==='zh'?'關聯':'關聯'}</text>
+      </g>
+      <text x="350" y="335" textAnchor="middle" fontSize="11" fill={fg} opacity="0.7" fontStyle="italic">{lang==='zh'?'Mastery Experience（精熟經驗）為 Self-Efficacy 最強來源':'Mastery Experience is the strongest Self-Efficacy source'}</text>
+      <defs><marker id="a4a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 9 3, 0 6" fill={fg}/></marker></defs>
+    </svg>
+  );
+};
+
+// M5 SVG: Three-Tier Support
+const SVG_M5 = ({lang, isDark}) => {
+  const fg = isDark ? '#D8C3A5' : '#004030';
+  const bg = isDark ? '#1e293b' : '#ffffff';
+  return (
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-3xl">
+      <rect width="700" height="300" fill={bg} rx="8"/>
+      <text x="350" y="28" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg} fontFamily="Merriweather,serif">{lang==='zh'?'外籍生融入：三層語言支援架構':'Foreign Student Integration: Three-Tier Support'}</text>
+      <rect x="150" y="55" width="400" height="50" rx="6" fill="none" stroke={fg} strokeWidth="2"/>
+      <text x="350" y="78" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg}>ESP · English for Specific Purposes</text>
+      <text x="350" y="96" textAnchor="middle" fontSize="11" fill={fg} opacity="0.7">{lang==='zh'?'特定領域英文（商管、工程、醫學）':'Discipline-specific English (Business, Engineering, Medicine)'}</text>
+      <rect x="150" y="115" width="400" height="50" rx="6" fill="none" stroke={fg} strokeWidth="2"/>
+      <text x="350" y="138" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg}>EAP · English for Academic Purposes</text>
+      <text x="350" y="156" textAnchor="middle" fontSize="11" fill={fg} opacity="0.7">{lang==='zh'?'學術英文（寫作、簡報、研究方法）':'Academic English (Writing, Presentation, Research)'}</text>
+      <line x1="350" y1="172" x2="350" y2="195" stroke="#D8C3A5" strokeWidth="3" markerEnd="url(#a5a)"/>
+      <rect x="100" y="200" width="500" height="70" rx="6" fill={fg}/>
+      <text x="350" y="226" textAnchor="middle" fontSize="16" fontWeight="700" fill={bg}>⭐ MSAP · Mandarin for SP/AP</text>
+      <text x="350" y="248" textAnchor="middle" fontSize="12" fill={bg} opacity="0.85">{lang==='zh'?'華語版的 ESP + EAP — 駱老師原創貢獻':'Mandarin equivalent of ESP+EAP — original contribution'}</text>
+      <text x="350" y="264" textAnchor="middle" fontSize="10" fill="#D8C3A5" fontStyle="italic">{lang==='zh'?'與英文支援對等位階':'On equal footing with English support'}</text>
+      <defs><marker id="a5a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 9 3, 0 6" fill="#D8C3A5"/></marker></defs>
+    </svg>
+  );
+};
+
+// M6 SVG: Autonomy Spectrum
+const SVG_M6 = ({lang, isDark}) => {
+  const fg = isDark ? '#D8C3A5' : '#004030';
+  const bg = isDark ? '#1e293b' : '#ffffff';
+  const labels = lang==='zh' ? ['Assistant 助手','Copilot 副駕','Agent 代理人'] : ['Assistant','Copilot','Agent'];
+  const sub = lang==='zh' ? ['人主導 ~10%','半自主 ~50%','全自主 ~80%'] : ['Human-led ~10%','Semi-Auto ~50%','Fully-Auto ~80%'];
+  return (
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-3xl">
+      <rect width="700" height="300" fill={bg} rx="8"/>
+      <text x="350" y="28" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg} fontFamily="Merriweather,serif">{lang==='zh'?'AI 協作自主性光譜':'AI Collaboration Autonomy Spectrum'}</text>
+      <defs>
+        <linearGradient id="grad6" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#10b981"/>
+          <stop offset="50%" stopColor="#D8C3A5"/>
+          <stop offset="100%" stopColor="#0ea5e9"/>
+        </linearGradient>
+      </defs>
+      <rect x="50" y="60" width="600" height="20" rx="10" fill="url(#grad6)"/>
+      {[0,1,2].map(i=>(
+        <g key={i} transform={`translate(${85+i*220}, 100)`}>
+          <circle cx="80" cy="0" r="8" fill={fg}/>
+          <text x="80" y="35" textAnchor="middle" fontSize="14" fontWeight="700" fill={fg}>{labels[i]}</text>
+          <text x="80" y="55" textAnchor="middle" fontSize="11" fill={fg} opacity="0.7">{sub[i]}</text>
+        </g>
+      ))}
+      <g transform="translate(50, 200)">
+        <text x="0" y="0" fontSize="12" fontWeight="700" fill={fg}>{lang==='zh'?'產出格式 Outputs:':'Outputs:'}</text>
+        <rect x="0" y="15" width="180" height="40" rx="6" fill={fg} opacity="0.1" stroke={fg}/>
+        <text x="90" y="40" textAnchor="middle" fontSize="13" fontWeight="600" fill={fg}>SVG</text>
+        <rect x="200" y="15" width="180" height="40" rx="6" fill={fg} opacity="0.1" stroke={fg}/>
+        <text x="290" y="40" textAnchor="middle" fontSize="13" fontWeight="600" fill={fg}>HTML / SPA</text>
+        <rect x="400" y="15" width="200" height="40" rx="6" fill={fg} opacity="0.1" stroke={fg}/>
+        <text x="500" y="40" textAnchor="middle" fontSize="13" fontWeight="600" fill={fg}>Gemini / Claude</text>
+      </g>
+    </svg>
+  );
+};
+
+
+/* ============ App 主程式 ============ */
+function App() {
+  const LS_KEY = 'AIVC4EML_SPA_analytics';
+  const LS_STU = 'AIVC4EML_SPA_student';
+  const loadLS = (key, fb) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; } catch { return fb; } };
+
+  const [lang, setLang] = useState('en');
+  const [isDark, setIsDark] = useState(true);
+  const [module, setModule] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [ttsState, setTtsState] = useState('idle');
+  const [studentInfo, setStudentInfo] = useState(() => loadLS(LS_STU, { group:'', dept:'', id:'', nameEn:'', nameZh:'' }));
+  const [analytics, setAnalytics] = useState(() => loadLS(LS_KEY, {
+    time: Array(TOTAL).fill(0), clicks: Array(TOTAL).fill(0),
+    quizCorrect: Array(TOTAL).fill(0), quizTotal: Array(TOTAL).fill(0),
+    cardsRead: Array(TOTAL).fill(0), cardsTotal: Array(TOTAL).fill(0),
+    wrongTopics: {}
+  }));
+  const contentRef = useRef(null);
+  const menuRef = useRef(null);
+  const t = dict[lang];
+
+  // 設定全域語言以供 toast 使用
+  useEffect(() => { window._aivcLang = lang; }, [lang]);
+
+  useEffect(() => { document.documentElement.classList.toggle('dark', isDark); }, [isDark]);
+  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(analytics)); } catch {} }, [analytics]);
+  useEffect(() => { try { localStorage.setItem(LS_STU, JSON.stringify(studentInfo)); } catch {} }, [studentInfo]);
+
+  // 模組計時 + 點擊計數
+  const moduleStartRef = useRef(Date.now());
+  useEffect(() => {
+    moduleStartRef.current = Date.now();
+    return () => {
+      const elapsed = Math.round((Date.now() - moduleStartRef.current)/1000);
+      if (elapsed > 0) {
+        setAnalytics(a => {
+          const tm = [...a.time]; tm[module] = (tm[module]||0) + elapsed;
+          return { ...a, time: tm };
+        });
+      }
+    };
+  }, [module]);
+
+  // 全域點擊計數
+  useEffect(() => {
+    const onClick = () => setAnalytics(a => {
+      const cl = [...a.clicks]; cl[module] = (cl[module]||0) + 1;
+      return { ...a, clicks: cl };
+    });
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, [module]);
+
+  // 外部點擊收合漢堡
+  useEffect(() => {
+    const onDoc = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    if (menuOpen) document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [menuOpen]);
+
+  // Quiz / Card 回呼
+  const handleQuizSubmit = (mid, correct, total, wrongQs, moduleName) => {
+    setAnalytics(a => {
+      const qc = [...a.quizCorrect], qt = [...a.quizTotal];
+      qc[mid] = correct; qt[mid] = total;
+      const wt = { ...a.wrongTopics }; wt[mid] = wrongQs || [];
+      return { ...a, quizCorrect: qc, quizTotal: qt, wrongTopics: wt };
+    });
+  };
+  const handleCardRead = (mid, readCount, shownCount, totalCount) => {
+    setAnalytics(a => {
+      const cr = [...a.cardsRead], ct = [...a.cardsTotal];
+      cr[mid] = readCount; ct[mid] = totalCount;
+      return { ...a, cardsRead: cr, cardsTotal: ct };
+    });
+  };
+
+  // 模組清單（雙語）
+  const modulesList = useMemo(() => {
+    const learnIcons = ['🔄','🗂️','🤖','💡','🌏','⚙️'];
+    const arr = [{ id:0, num:'0', icon:'📋', title: t.m0_nav }];
+    for (let i=1; i<=NUM_LEARN; i++) {
+      arr.push({ id:i, num:String(i), icon:learnIcons[i-1], title: t[`m${i}_nav`] });
+    }
+    arr.push({ id:IDX_LAB, num:String(IDX_LAB), icon:'🧪', title: t.mlab_nav });
+    arr.push({ id:IDX_RES, num:String(IDX_RES), icon:'🌐', title: t.mres_nav });
+    arr.push({ id:IDX_ANA, num:String(IDX_ANA), icon:'📊', title: lang==='zh'?'9. 學習歷程分析':'9. Learning Analytics' });
+    return arr;
+  }, [lang, t]);
+
+  // TTS
+  const handleTTS = (action) => {
+    if (!('speechSynthesis' in window)) return;
+    if (action === 'stop') { speechSynthesis.cancel(); setTtsState('idle'); return; }
+    if (action === 'pause') { speechSynthesis.pause(); setTtsState('paused'); return; }
+    if (action === 'play') {
+      if (ttsState === 'paused') { speechSynthesis.resume(); setTtsState('playing'); return; }
+      speechSynthesis.cancel();
+      const sep = lang === 'zh' ? '。 ' : '. ';
+      let texts = [];
+      if (module === 0) {
+        texts = [t.m0_title, t.m0_intro, t.m0_why, t.m0_why_desc,
+          ...(t.m0_stats||[]).map(s=>`${s.label}: ${s.val}`),
+          ...(t.m0_modules||[]).map(m=>`${m.title}. ${m.desc}`)
+        ];
+      } else if (module >= 1 && module <= NUM_LEARN) {
+        const mk = `m${module}`;
+        texts = [
+          t[`${mk}_title`], t[`${mk}_overview`],
+          ...(t[`${mk}_highlights`]||[]),
+          ...[1,2,3,4,5,6,7,8].map(n=>t[`${mk}_p${n}`]).filter(Boolean),
+          t[`${mk}_wrapup`],
+          ...(t[`${mk}_terms`]||[]).flatMap(tm=>[tm.front, tm.back])
+        ];
+      } else if (module === IDX_LAB) {
+        texts = [t.mlab_title, t.mlab_desc, ...(t.mlab_labs||[]).map(l=>`${l.title}. ${l.desc||''}`)];
+      } else if (module === IDX_RES) {
+        texts = [t.mres_title, t.mres_desc];
+      } else if (module === IDX_ANA) {
+        const tc = analytics.quizCorrect.reduce((a,b)=>a+b,0);
+        const ta = analytics.quizTotal.reduce((a,b)=>a+b,0);
+        const oa = ta>0 ? Math.round(tc/ta*100) : 0;
+        const wk = [];
+        for (let i=1;i<=NUM_LEARN;i++) {
+          if (analytics.quizTotal[i]>0) {
+            const a = Math.round(analytics.quizCorrect[i]/analytics.quizTotal[i]*100);
+            if (a<75) wk.push({name:modulesList[i].title,acc:a});
+          }
+        }
+        wk.sort((a,b)=>a.acc-b.acc);
+        texts = [t.analytics_title, t.analytics_desc,
+          `${t.analytics_total_time}: ${analytics.time.reduce((a,b)=>a+b,0)}${t.analytics_sec}`,
+          `${t.analytics_total_clicks}: ${analytics.clicks.reduce((a,b)=>a+b,0)}${t.analytics_times}`,
+          `${t.analytics_overall_acc}: ${oa}%`
+        ];
+        if (wk.length) { texts.push(t.analytics_wp_tts_intro); wk.forEach(w=>texts.push(t.analytics_wp_tts_module.replace('{name}',w.name).replace('{acc}',w.acc))); }
+        else if (ta>0) texts.push(t.analytics_wp_tts_allpass);
+      }
+      texts = texts.filter(Boolean);
+      const utt = new SpeechSynthesisUtterance(texts.join(sep));
+      utt.rate = 0.95;
+      const voices = speechSynthesis.getVoices();
+      if (lang==='zh') {
+        const v = voices.find(v=>v.lang==='zh-TW'&&v.name.includes('Yating'))||voices.find(v=>v.lang==='zh-TW')||voices.find(v=>v.lang.startsWith('zh'));
+        if (v) utt.voice = v; utt.lang = 'zh-TW';
+      } else {
+        const v = voices.find(v=>v.lang==='en-GB'&&(v.name.includes('Male')||v.name.includes('Daniel')))||voices.find(v=>v.lang==='en-GB')||voices.find(v=>v.lang.startsWith('en'));
+        if (v) utt.voice = v; utt.lang = 'en-GB';
+      }
+      utt.onend = () => setTtsState('idle');
+      utt.onerror = () => setTtsState('idle');
+      speechSynthesis.speak(utt);
+      setTtsState('playing');
+    }
+  };
+
+  const scrollTop = () => window.scrollTo({top:0, behavior:'smooth'});
+  const SVGComponents = [null, SVG_M1, SVG_M2, SVG_M3, SVG_M4, SVG_M5, SVG_M6];
+
+  /* ============ Render ============ */
+  return (
+    <div className="min-h-screen flex flex-col bg-[#f4f4f4] dark:bg-[#121212] text-slate-800 dark:text-slate-200">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-[#004030] dark:bg-slate-900 text-white z-50 shadow-lg border-b border-[#D8C3A5]/30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+            {/* 漢堡 */}
+            <div className="relative" ref={menuRef}>
+              <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 hover:bg-white/10 rounded-lg" aria-label="Menu"><IconMenu size={20}/></button>
+              {menuOpen && (
+                <div className="absolute top-full left-0 mt-1 w-64 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5rem)] overflow-y-auto bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[100]">
+                  {modulesList.map(m => (
+                    <button key={m.id} onClick={() => { setModule(m.id); setMenuOpen(false); scrollTop(); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${module===m.id?'bg-[#004030]/10 dark:bg-[#D8C3A5]/10 font-bold text-[#004030] dark:text-[#D8C3A5]':''}`}>
+                      <span className="text-lg">{m.icon}</span>
+                      <span className="font-mono text-xs opacity-60">M{m.num}</span>
+                      <span className="truncate text-left flex-1">{m.title.replace(/^\d+\.\s*/,'')}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Home */}
+            <button onClick={() => { setModule(0); scrollTop(); }} className="p-2 hover:bg-white/10 rounded-lg" aria-label="Home"><IconHome size={18}/></button>
+            {/* 品牌/標題 */}
+            <button onClick={scrollTop} className="flex items-center gap-2 min-w-0">
+              <span className="font-serif font-black text-[#D8C3A5] text-base sm:text-lg tracking-widest">{t.brand}</span>
+              <span className="hidden sm:inline font-serif font-bold text-xs md:text-sm truncate">{t.title}</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* TTS */}
+            <button onClick={() => handleTTS(ttsState==='playing'?'pause':'play')} className="p-2 hover:bg-white/10 rounded-lg" title={t.audio_read}>
+              {ttsState==='playing' ? <IconPause size={16}/> : <IconPlay size={16}/>}
+            </button>
+            <button onClick={() => handleTTS('stop')} className="p-2 hover:bg-white/10 rounded-lg" title="Stop"><IconSquare size={14}/></button>
+            {/* Lang */}
+            <button onClick={() => setLang(lang==='zh'?'en':'zh')} className="px-2 py-1 hover:bg-white/10 rounded-lg text-xs font-bold border border-[#D8C3A5]/40">
+              {lang==='zh'?'EN':'中'}
+            </button>
+            {/* Theme */}
+            <button onClick={() => setIsDark(!isDark)} className="p-2 hover:bg-white/10 rounded-lg" aria-label="Theme">
+              {isDark ? <IconSun size={16}/> : <IconMoon size={16}/>}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Body */}
+      <div className="pt-16 flex flex-1 max-w-7xl mx-auto w-full">
+        {/* Sidebar */}
+        <aside className="w-64 shrink-0 hidden md:block bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 sticky top-16 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <nav className="p-3 space-y-1">
+            {modulesList.map(m => (
+              <button key={m.id} onClick={() => { setModule(m.id); scrollTop(); }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all ${module===m.id?'bg-[#004030] text-white dark:bg-[#D8C3A5] dark:text-[#004030] font-bold':'hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+                <span className="text-base shrink-0">{m.icon}</span>
+                <span className="font-mono text-xs opacity-60 shrink-0">M{m.num}</span>
+                <span className="truncate text-left">{m.title.replace(/^\d+\.\s*/,'')}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main */}
+        <main ref={contentRef} className="flex-1 min-w-0 p-4 sm:p-6 md:p-10">
+          <ModuleRouter
+            module={module} setModule={setModule} t={t} lang={lang} isDark={isDark}
+            modulesList={modulesList} SVGComponents={SVGComponents}
+            handleCardRead={handleCardRead} handleQuizSubmit={handleQuizSubmit}
+            analytics={analytics} setAnalytics={setAnalytics}
+            studentInfo={studentInfo} setStudentInfo={setStudentInfo}
+            LS_KEY={LS_KEY} LS_STU={LS_STU}
+          />
+          {/* 底部導覽 */}
+          <div className="mt-12 flex justify-between items-center pt-8 border-t border-slate-300 dark:border-slate-700">
+            <button onClick={() => { setModule(Math.max(0,module-1)); scrollTop(); }} disabled={module===0}
+              className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-0">{t.nav_prev}</button>
+            <button onClick={() => { setModule(Math.min(TOTAL-1,module+1)); scrollTop(); }} disabled={module===TOTAL-1}
+              className="px-4 py-2 text-sm bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg disabled:opacity-0">{t.nav_next}</button>
+          </div>
+        </main>
+      </div>
+
+      {/* Footer */}
+      <footer className="h-8 bg-[#004030] flex items-center justify-between px-3 sm:px-4 shrink-0">
+        <span className="text-[#D8C3A5]/60 text-[10px] sm:text-xs">{t.date} · {t.copyright}</span>
+        <span className="text-[#D8C3A5]/60 text-[10px] sm:text-xs flex items-center gap-2 sm:gap-3">
+          <span className="hidden sm:inline">{t.architect_label}&nbsp;<a href={t.architect_url} target="_blank" rel="noopener noreferrer" className="text-[#D8C3A5] hover:text-white underline">{t.architect_name}</a></span>
+          <button onClick={scrollTop} className="text-[#D8C3A5] hover:text-white font-bold">Top ↑</button>
+        </span>
+      </footer>
+    </div>
+  );
+}
+
+
+/* ============ ModuleRouter — 各模組分頁渲染 ============ */
+const ModuleRouter = ({
+  module, setModule, t, lang, isDark, modulesList, SVGComponents,
+  handleCardRead, handleQuizSubmit, analytics, setAnalytics,
+  studentInfo, setStudentInfo, LS_KEY, LS_STU
+}) => {
+
+  /* ===== M0 執行概要 ===== */
+  if (module === 0) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div className="bg-gradient-to-br from-[#004030] to-[#004030]/80 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-6 sm:p-10 text-white border border-[#D8C3A5]/30">
+          <div className="text-xs uppercase tracking-[0.3em] text-[#D8C3A5] mb-3">{t.subtitle}</div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black mb-4 text-[#D8C3A5]">{t.m0_title}</h1>
+          <p className="text-sm sm:text-base leading-relaxed text-slate-100/90 mb-6">{t.m0_intro}</p>
+          <button onClick={() => setModule(1)} className="px-6 py-3 bg-[#D8C3A5] text-[#004030] font-bold rounded-lg hover:bg-white transition-all inline-flex items-center gap-2">
+            {t.m0_start}
+          </button>
+        </div>
+
+        {/* 4 統計卡 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          {t.m0_stats.map((s,i) => (
+            <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-3xl font-serif font-black text-[#004030] dark:text-[#D8C3A5]">{s.val}</div>
+              <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Why */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+          <h3 className="font-serif font-black text-xl text-[#004030] dark:text-[#D8C3A5] mb-3">{t.m0_why}</h3>
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{t.m0_why_desc}</p>
+        </div>
+
+        {/* 6 模組預覽 */}
+        <div>
+          <h3 className="font-serif font-black text-xl text-[#004030] dark:text-[#D8C3A5] mb-4">{lang==='zh'?'六大學習模組':'Six Learning Modules'}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {t.m0_modules.map((m,i) => (
+              <button key={i} onClick={() => setModule(i+1)}
+                className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 hover:border-[#004030] dark:hover:border-[#D8C3A5] hover:shadow-md transition-all text-left group">
+                <div className="text-xs font-mono text-slate-400 mb-2">M{i+1} · {m.num}</div>
+                <div className="font-serif font-bold text-[#004030] dark:text-[#D8C3A5] mb-2 group-hover:underline">{m.title}</div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{m.desc}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ===== M1–M6 學習模組 ===== */
+  if (module >= 1 && module <= NUM_LEARN) {
+    const mk = `m${module}`;
+    const SVGComp = SVGComponents[module];
+    const paragraphs = [t[`${mk}_p1`], t[`${mk}_p2`], t[`${mk}_p3`], t[`${mk}_p4`], t[`${mk}_p5`]].filter(Boolean);
+    return (
+      <div className="space-y-6 text-base leading-relaxed text-slate-700 dark:text-slate-300 animate-fade-in">
+        <H2 icon={modulesList[module].icon} number={modulesList[module].num}>{t[`${mk}_title`]}</H2>
+
+        {/* 1. Overview */}
+        <div className="bg-[#004030]/5 dark:bg-[#D8C3A5]/5 rounded-xl p-5 border-l-4 border-[#D8C3A5]">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t.overview_label}</h3>
+          <p>{t[`${mk}_overview`]}</p>
+        </div>
+
+        {/* 2. Highlights */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t.highlights_label}</h3>
+          <div className="flex flex-wrap gap-2">
+            {t[`${mk}_highlights`].map((h,i) => (
+              <span key={i} className="px-3 py-1 bg-[#004030]/10 dark:bg-[#D8C3A5]/10 text-[#004030] dark:text-[#D8C3A5] rounded-full text-sm font-medium">{h}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Deep Dive */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t.deep_dive_label}</h3>
+          <div className="space-y-4">
+            {paragraphs.map((p,i) => i===1 ? (
+              <p key={i} className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg italic font-serif border-l-2 border-[#D8C3A5]">{p}</p>
+            ) : (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. SVG */}
+        {SVGComp && (
+          <div className="flex justify-center bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4" onContextMenu={e => { e.preventDefault(); showCopyrightToast(lang); }}>
+            <SVGComp lang={lang} isDark={isDark}/>
+          </div>
+        )}
+
+        {/* 5. FlipCardDeck */}
+        <FlipCardDeck key={`cards-${module}`} terms={t[`${mk}_terms`]} t={t} moduleId={module} onCardRead={handleCardRead}/>
+
+        {/* 6. Wrapup */}
+        <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{t.wrapup_label}</h3>
+          <p className="italic">{t[`${mk}_wrapup`]}</p>
+        </div>
+
+        {/* 7. Quiz */}
+        <ModuleQuiz key={`quiz-${module}`} questions={t[`${mk}_q`]} t={t} moduleId={module} onQuizSubmit={handleQuizSubmit} moduleName={t[`${mk}_title`]}/>
+      </div>
+    );
+  }
+
+  /* ===== Lab (M7) ===== */
+  if (module === IDX_LAB) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <H2 icon="🧪" number={IDX_LAB}>{t.mlab_title}</H2>
+        <p className="text-slate-600 dark:text-slate-300">{t.mlab_desc}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <ParadigmToggleLab lang={lang}/>
+          <LanguageClassifierLab lang={lang}/>
+          <SDTDiagnosticLab lang={lang}/>
+          <AutonomySpectrumLab lang={lang}/>
+          <div className="lg:col-span-2"><PaceVisualizerLab lang={lang}/></div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ===== Resources (M8) ===== */
+  if (module === IDX_RES) {
+    const groups = lang==='zh' ? [
+      { title:'📚 EMI / EML 學術文獻', items:[
+        { label:'Macaro et al. (2018) — A systematic review of EMI in HE', url:'https://doi.org/10.1017/S0261444817000350', desc:'EMI 在高等教育的系統性回顧（劍橋大學）' },
+        { label:'British Council — Why EMI?', url:'https://www.britishcouncil.org/voices-magazine/why-emi', desc:'英國文化協會對 EMI 的全球視角' }
+      ]},
+      { title:'🧠 SDT / 自我決定理論', items:[
+        { label:'Deci & Ryan — Center for Self-Determination Theory', url:'https://selfdeterminationtheory.org/', desc:'SDT 創始學者官方資源中心' },
+        { label:'Bandura — Self-Efficacy', url:'https://en.wikipedia.org/wiki/Self-efficacy', desc:'自我效能理論四項來源' }
+      ]},
+      { title:'🤖 AI 工具（GenAI）', items:[
+        { label:'Claude (Anthropic)', url:'https://claude.ai', desc:'長文本推理、程式碼產出、Skills 客製化' },
+        { label:'Gemini (Google)', url:'https://gemini.google.com', desc:'多模態與 Workspace 整合' },
+        { label:'NotebookLM', url:'https://notebooklm.google', desc:'文件理解與筆記生成' },
+        { label:'Anthropic Skills 介紹', url:'https://docs.claude.com', desc:'Claude Skills 官方文件' }
+      ]},
+      { title:'💡 Vibe Coding 入門', items:[
+        { label:'Andrej Karpathy — Vibe Coding 概念', url:'https://x.com/karpathy/status/1886192184808149383', desc:'Vibe Coding 一詞的源起與精神' },
+        { label:'MDN Web Docs — HTML/CSS/JS', url:'https://developer.mozilla.org', desc:'網頁前端官方學習資源' }
+      ]},
+      { title:'🌏 ESP / EAP / MSAP', items:[
+        { label:'Cambridge ESP & EAP', url:'https://www.cambridge.org/elt/blog/category/english-for-specific-purposes/', desc:'劍橋 ESP/EAP 教學部落格' },
+        { label:'駱世民教授個人頁面', url:'https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo', desc:'本講座架構作者的學術頁面' }
+      ]}
+    ] : [
+      { title:'📚 EMI / EML Academic Literature', items:[
+        { label:'Macaro et al. (2018) — Systematic review of EMI in HE', url:'https://doi.org/10.1017/S0261444817000350', desc:'A Cambridge systematic review of EMI in higher education' },
+        { label:'British Council — Why EMI?', url:'https://www.britishcouncil.org/voices-magazine/why-emi', desc:'British Council\'s global perspective on EMI' }
+      ]},
+      { title:'🧠 SDT & Self-Efficacy', items:[
+        { label:'Deci & Ryan — Self-Determination Theory', url:'https://selfdeterminationtheory.org/', desc:'Official resource center by the founders of SDT' },
+        { label:'Bandura — Self-Efficacy', url:'https://en.wikipedia.org/wiki/Self-efficacy', desc:'The four sources of self-efficacy' }
+      ]},
+      { title:'🤖 AI Tools (GenAI)', items:[
+        { label:'Claude (Anthropic)', url:'https://claude.ai', desc:'Long-context reasoning, code generation, Skills' },
+        { label:'Gemini (Google)', url:'https://gemini.google.com', desc:'Multimodal and Workspace integration' },
+        { label:'NotebookLM', url:'https://notebooklm.google', desc:'Document understanding and note generation' },
+        { label:'Anthropic Skills Documentation', url:'https://docs.claude.com', desc:'Official Claude Skills documentation' }
+      ]},
+      { title:'💡 Vibe Coding Primer', items:[
+        { label:'Andrej Karpathy on Vibe Coding', url:'https://x.com/karpathy/status/1886192184808149383', desc:'The origin and spirit of the term Vibe Coding' },
+        { label:'MDN Web Docs — HTML/CSS/JS', url:'https://developer.mozilla.org', desc:'Official frontend web reference' }
+      ]},
+      { title:'🌏 ESP / EAP / MSAP', items:[
+        { label:'Cambridge ESP & EAP Blog', url:'https://www.cambridge.org/elt/blog/category/english-for-specific-purposes/', desc:'Cambridge teaching blog on ESP/EAP' },
+        { label:'Prof. Shihmin Lo — Faculty Page', url:'https://www.ibs.ncnu.edu.tw/index.php/faculty/tenured-professor/299-smlo', desc:'Architect of the framework — academic page' }
+      ]}
+    ];
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <H2 icon="🌐" number={IDX_RES}>{t.mres_title}</H2>
+        <p className="text-slate-600 dark:text-slate-300">{t.mres_desc}</p>
+        {groups.map((g,gi) => (
+          <div key={gi}>
+            <h3 className="font-serif font-bold text-lg text-[#004030] dark:text-[#D8C3A5] mb-3">{g.title}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {g.items.map((it,i) => <LinkCard key={i} label={it.label} url={it.url} desc={it.desc}/>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  /* ===== Analytics (M9) ===== */
+  if (module === IDX_ANA) {
+    return <AnalyticsPanel
+      t={t} lang={lang} modulesList={modulesList} setModule={setModule}
+      analytics={analytics} setAnalytics={setAnalytics}
+      studentInfo={studentInfo} setStudentInfo={setStudentInfo}
+      LS_KEY={LS_KEY} LS_STU={LS_STU}
+    />;
+  }
+
+  return null;
+};
+
+/* ============ Analytics Panel ============ */
+const AnalyticsPanel = ({ t, lang, modulesList, setModule, analytics, setAnalytics, studentInfo, setStudentInfo, LS_KEY, LS_STU }) => {
+  const totalTime = analytics.time.reduce((a,b)=>a+b,0);
+  const totalClicks = analytics.clicks.reduce((a,b)=>a+b,0);
+  const totalCorrect = analytics.quizCorrect.reduce((a,b)=>a+b,0);
+  const totalAnswered = analytics.quizTotal.reduce((a,b)=>a+b,0);
+  const overallAcc = totalAnswered > 0 ? Math.round(totalCorrect/totalAnswered*100) : 0;
+  const totalCardsRead = analytics.cardsRead.reduce((a,b)=>a+b,0);
+  const totalCardsAll = analytics.cardsTotal.reduce((a,b)=>a+b,0);
+  const cardUsage = totalCardsAll > 0 ? Math.round(totalCardsRead/totalCardsAll*100) : 0;
+
+  // 弱點
+  const weakPoints = [];
+  for (let i=1; i<=NUM_LEARN; i++) {
+    if (analytics.quizTotal[i] > 0) {
+      const acc = Math.round(analytics.quizCorrect[i]/analytics.quizTotal[i]*100);
+      if (acc < 75) {
+        weakPoints.push({
+          mid: i, name: modulesList[i].title.replace(/^\d+\.\s*/,''),
+          acc, wrongs: analytics.wrongTopics[i] || []
+        });
+      }
+    }
+  }
+  weakPoints.sort((a,b)=>a.acc-b.acc);
+
+  const formComplete = studentInfo.group && studentInfo.dept && studentInfo.id && studentInfo.nameEn && studentInfo.nameZh;
+
+  // CSV 匯出 — 檔名永遠中文
+  const exportCSV = () => {
+    if (!formComplete) return;
+    const zh = dict.zh;
+    const now = new Date();
+    const date = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+    const filename = `${zh.brand} ${zh.title}_${studentInfo.nameEn} ${studentInfo.nameZh}_${date}.csv`;
+    const rows = [
+      ['Group', studentInfo.group],
+      ['Dept/Year', studentInfo.dept],
+      ['Student ID', studentInfo.id],
+      ['Name (EN)', studentInfo.nameEn],
+      ['Name (ZH)', studentInfo.nameZh],
+      ['Export Date', now.toISOString()],
+      [],
+      ['Module','Title','Time (s)','Clicks','Correct','Answered','Total Q','Cards Read','Cards Total','Wrong Questions']
+    ];
+    for (let i=0; i<TOTAL; i++) {
+      const name = modulesList[i].title.replace(/^\d+\.\s*/,'');
+      const totalQ = (i>=1 && i<=NUM_LEARN && dict.zh[`m${i}_q`]) ? dict.zh[`m${i}_q`].length : 0;
+      const wrongs = (analytics.wrongTopics[i] || []).join(' | ');
+      rows.push([
+        `M${i}`, name,
+        analytics.time[i]||0, analytics.clicks[i]||0,
+        analytics.quizCorrect[i]||0, analytics.quizTotal[i]||0, totalQ,
+        analytics.cardsRead[i]||0, analytics.cardsTotal[i]||0,
+        wrongs
+      ]);
+    }
+    const csv = '\uFEFF' + rows.map(r => r.map(c => {
+      const s = String(c==null?'':c);
+      return /[,"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+    }).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const clearLog = () => {
+    if (window.confirm(t.analytics_wp_clear_confirm)) {
+      const fresh = {
+        time: Array(TOTAL).fill(0), clicks: Array(TOTAL).fill(0),
+        quizCorrect: Array(TOTAL).fill(0), quizTotal: Array(TOTAL).fill(0),
+        cardsRead: Array(TOTAL).fill(0), cardsTotal: Array(TOTAL).fill(0),
+        wrongTopics: {}
+      };
+      setAnalytics(fresh);
+      try { localStorage.setItem(LS_KEY, JSON.stringify(fresh)); } catch {}
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <H2 icon="📊" number={IDX_ANA}>{t.analytics_title}</H2>
+      <p className="text-slate-600 dark:text-slate-300">{t.analytics_desc}</p>
+
+      {/* 4 統計卡 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label={t.analytics_total_time} val={`${totalTime}${t.analytics_sec}`} icon="⏱️"/>
+        <StatCard label={t.analytics_total_clicks} val={`${totalClicks}`} icon="👆"/>
+        <StatCard label={t.analytics_overall_acc} val={`${overallAcc}%`} icon="🎯"/>
+        <StatCard label={t.analytics_card_usage} val={`${cardUsage}%`} icon="🃏"/>
+      </div>
+
+      {/* 整體學習進度 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+        <h3 className="font-serif font-bold text-lg text-[#004030] dark:text-[#D8C3A5] mb-4">{t.analytics_progress_title}</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {modulesList.map(m => {
+            const visited = (analytics.time[m.id]||0) > 0 || (analytics.clicks[m.id]||0) > 0;
+            const quizDone = (analytics.quizTotal[m.id]||0) > 0;
+            const status = quizDone ? 'quiz' : (visited ? 'visited' : 'not');
+            const colors = { quiz: 'bg-green-500 text-white', visited: 'bg-amber-400 text-amber-900', not: 'bg-slate-200 dark:bg-slate-700 text-slate-500' };
+            return (
+              <button key={m.id} onClick={() => setModule(m.id)}
+                className={`px-2 py-2 rounded-lg text-xs font-bold ${colors[status]} hover:opacity-80 transition-all text-left`}>
+                <div className="font-mono">M{m.num} {m.icon}</div>
+                <div className="truncate text-[10px] mt-1">{m.title.replace(/^\d+\.\s*/,'')}</div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex gap-4 text-xs mt-3 text-slate-500">
+          <span>🟢 {t.analytics_progress_quiz_done}</span>
+          <span>🟡 {t.analytics_progress_visited}</span>
+          <span>⚪ {t.analytics_progress_not_visited}</span>
+        </div>
+      </div>
+
+      {/* 弱點分析 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+        <h3 className="font-serif font-bold text-lg text-[#004030] dark:text-[#D8C3A5] mb-4">{t.analytics_wp_title}</h3>
+        {weakPoints.length > 0 ? (
+          <div className="space-y-3">
+            {weakPoints.map((wp,i) => (
+              <div key={i} className="border-l-4 border-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-r-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold text-sm">{wp.name}</span>
+                  <span className="font-mono text-sm font-bold text-red-600 dark:text-red-400">{wp.acc}%</span>
+                </div>
+                {wp.wrongs.length > 0 && (
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                    <div className="font-bold mb-1">{t.analytics_wp_incorrect}</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      {wp.wrongs.map((w,j) => <li key={j}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+                <button onClick={() => setModule(wp.mid)} className="text-xs font-bold text-[#004030] dark:text-[#D8C3A5] hover:underline">
+                  {t.analytics_wp_goto}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-green-700 dark:text-green-400 font-medium">✅ {totalAnswered > 0 ? t.analytics_wp_allpass : (lang==='zh'?'尚未開始測驗':'No quiz attempts yet')}</p>
+        )}
+      </div>
+
+      {/* 各模組明細 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <h3 className="font-serif font-bold text-lg text-[#004030] dark:text-[#D8C3A5] mb-4">{lang==='zh'?'各模組明細':'Per-Module Detail'}</h3>
+        <table className="w-full text-xs sm:text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
+              <th className="py-2 pr-2">{t.analytics_module}</th>
+              <th className="py-2 pr-2">{t.analytics_time}</th>
+              <th className="py-2 pr-2">{t.analytics_clicks}</th>
+              <th className="py-2 pr-2">{t.analytics_acc}</th>
+              <th className="py-2 pr-2 hidden sm:table-cell">{t.analytics_correct_ans_total}</th>
+              <th className="py-2">{t.analytics_cards_read_total}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {modulesList.map(m => {
+              const time = analytics.time[m.id]||0;
+              const clicks = analytics.clicks[m.id]||0;
+              const c = analytics.quizCorrect[m.id]||0;
+              const total = analytics.quizTotal[m.id]||0;
+              const totalQ = (m.id>=1 && m.id<=NUM_LEARN && dict.zh[`m${m.id}_q`]) ? dict.zh[`m${m.id}_q`].length : 0;
+              const acc = total > 0 ? Math.round(c/total*100) : null;
+              const cr = analytics.cardsRead[m.id]||0;
+              const ct = analytics.cardsTotal[m.id]||0;
+              return (
+                <tr key={m.id} className="border-b border-slate-100 dark:border-slate-700/50">
+                  <td className="py-2 pr-2 font-medium">M{m.num} {m.icon} <span className="hidden sm:inline">{m.title.replace(/^\d+\.\s*/,'')}</span></td>
+                  <td className="py-2 pr-2">{time}{t.analytics_sec}</td>
+                  <td className="py-2 pr-2">{clicks}</td>
+                  <td className="py-2 pr-2">{acc !== null ? <span className={acc>=75?'text-green-600 dark:text-green-400 font-bold':'text-red-500 font-bold'}>{acc}%</span> : <span className="text-slate-400">—</span>}</td>
+                  <td className="py-2 pr-2 hidden sm:table-cell">{total>0?`${c} / ${total} / ${totalQ}`:'—'}</td>
+                  <td className="py-2">{ct>0?`${cr} / ${ct}`:'—'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 學習者基本資料 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+        <h3 className="font-serif font-bold text-lg text-[#004030] dark:text-[#D8C3A5] mb-4">{t.analytics_form_title}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">{t.analytics_group}</label>
+            <select value={studentInfo.group} onChange={e=>setStudentInfo({...studentInfo, group:e.target.value})}
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
+              <option value="">{t.analytics_group_select}</option>
+              {t.group_options.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">{t.analytics_dept}</label>
+            <input type="text" value={studentInfo.dept} onChange={e=>setStudentInfo({...studentInfo, dept:sanitizeName(e.target.value)})}
+              placeholder={t.analytics_dept_ph}
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">{t.analytics_id}</label>
+            <input type="text" value={studentInfo.id} onChange={e=>setStudentInfo({...studentInfo, id:sanitizeStudentId(e.target.value)})}
+              placeholder={t.analytics_id_ph}
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">{t.analytics_name_en}</label>
+            <input type="text" value={studentInfo.nameEn} onChange={e=>setStudentInfo({...studentInfo, nameEn:sanitizeName(e.target.value)})}
+              placeholder={t.analytics_name_en_ph}
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">{t.analytics_name_zh}</label>
+            <input type="text" value={studentInfo.nameZh} onChange={e=>setStudentInfo({...studentInfo, nameZh:sanitizeName(e.target.value)})}
+              placeholder={t.analytics_name_zh_ph}
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"/>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 mt-5">
+          <button onClick={exportCSV} disabled={!formComplete}
+            className="px-5 py-2 bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] font-bold rounded-lg text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+            📥 {t.analytics_export_csv}
+          </button>
+          <button onClick={clearLog} className="px-5 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-sm">
+            {t.analytics_wp_clear}
+          </button>
+        </div>
+        {!formComplete && <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">⚠️ {t.analytics_fill_required}</p>}
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 italic">{t.analytics_wp_saved}</p>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ label, val, icon }) => (
+  <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+    <div className="text-2xl mb-1">{icon}</div>
+    <div className="text-2xl font-serif font-black text-[#004030] dark:text-[#D8C3A5]">{val}</div>
+    <div className="text-xs text-slate-500 mt-1">{label}</div>
+  </div>
+);
+
+/* ============ Mount ============ */
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
