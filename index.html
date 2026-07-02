@@ -1308,6 +1308,432 @@ const SVG_M6 = ({lang, isDark}) => {
   );
 };
 
+const OVERVIEW_SVG_RAW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" font-family="'Helvetica Neue', 'PingFang TC', 'Noto Sans TC', sans-serif">
+  <!-- ========== STYLES ========== -->
+  <defs>
+    <style>
+      .bg { fill: #FAF7F2; }
+      .title { font-size: 28px; font-weight: 700; fill: #004030; letter-spacing: 0.5px; }
+      .subtitle { font-size: 14px; font-weight: 400; fill: #6B6B6B; }
+      .section-title { font-size: 16px; font-weight: 700; fill: #004030; }
+      .label { font-size: 13px; fill: #2A2A2A; }
+      .label-bold { font-size: 13px; font-weight: 700; fill: #004030; }
+      .label-sm { font-size: 11px; fill: #4A4A4A; }
+      .label-white { font-size: 13px; font-weight: 700; fill: #FAF7F2; }
+      .label-gold { font-size: 13px; font-weight: 700; fill: #D8C3A5; }
+      .num-circle { fill: #D8C3A5; stroke: #004030; stroke-width: 1.5; }
+      .num-text { font-size: 13px; font-weight: 700; fill: #004030; text-anchor: middle; }
+      .card-main { fill: #FFFFFF; stroke: #004030; stroke-width: 2; }
+      .card-accent { fill: #004030; stroke: none; }
+      .card-soft { fill: #F2EBDD; stroke: #D8C3A5; stroke-width: 1.5; }
+      .card-highlight { fill: #FFF8E8; stroke: #C9A961; stroke-width: 2; }
+      .arrow { stroke: #004030; stroke-width: 2; fill: none; }
+      .arrow-soft { stroke: #8A8A8A; stroke-width: 1.5; fill: none; stroke-dasharray: 4,3; }
+      .divider { stroke: #D8C3A5; stroke-width: 1; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#004030"/>
+    </marker>
+    <marker id="arrowhead-soft" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#8A8A8A"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="1600" height="1100"/>
+
+  <!-- ========== HEADER ========== -->
+  <rect x="0" y="0" width="1600" height="70" fill="#004030"/>
+  <rect x="0" y="70" width="1600" height="4" fill="#D8C3A5"/>
+  <text x="60" y="42" class="label-gold" font-size="13" letter-spacing="3">TESPA · 2026/05/15 · 駱世民 教授 · 國立暨南國際大學</text>
+  <text x="60" y="62" font-size="22" font-weight="700" fill="#FAF7F2">AI Vibe Coding for EML</text>
+  <text x="1540" y="50" font-size="11" fill="#D8C3A5" text-anchor="end" letter-spacing="2">KNOWLEDGE FRAMEWORK</text>
+
+  <!-- ========== ① CONTEXT BAR (學情定位) ========== -->
+  <g transform="translate(60, 100)">
+    <rect width="1480" height="60" rx="4" class="card-soft"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">①</text>
+    <text x="60" y="25" class="section-title">學情定位 Context</text>
+    <text x="60" y="48" class="label-sm">地方型大學（暨大）· 校園地大 · 學生程度 ~B1 · 含外籍生　|　對比：台灣頂大（台清交成）的 EMI 模式</text>
+
+    <!-- Paradigm shift indicator -->
+    <g transform="translate(900, 18)">
+      <rect width="120" height="26" rx="13" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="60" y="18" class="label-bold" text-anchor="middle">EMI · Instruction</text>
+      <path d="M125 13 L155 13" class="arrow" marker-end="url(#arrowhead)"/>
+      <rect x="160" width="160" height="26" rx="13" class="card-accent"/>
+      <text x="240" y="18" class="label-white" text-anchor="middle">EML · Learning ✓</text>
+    </g>
+    <text x="1380" y="36" class="label-bold" text-anchor="middle">Student-Centered</text>
+  </g>
+
+  <!-- ========== ② CORE: Learning by Doing 中央軸 ========== -->
+  <g transform="translate(620, 200)">
+    <rect width="360" height="80" rx="6" class="card-accent"/>
+    <text x="180" y="32" class="label-white" text-anchor="middle" font-size="14" letter-spacing="2">CORE METHODOLOGY</text>
+    <text x="180" y="58" fill="#D8C3A5" font-size="22" font-weight="700" text-anchor="middle">Learning by Doing</text>
+    <text x="180" y="74" fill="#FAF7F2" font-size="11" text-anchor="middle">做中學 · 學生為中心的方法論</text>
+  </g>
+
+  <!-- ========== ③ LANGUAGE EXPANSION (左區) ========== -->
+  <g transform="translate(60, 310)">
+    <rect width="500" height="280" rx="6" class="card-main"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">②</text>
+    <text x="60" y="35" class="section-title">Language 的擴展定義（樞紐洞察）</text>
+    <text x="60" y="55" class="label-sm">在 EML 中，"Language" 不限於自然語言</text>
+
+    <line x1="20" y1="70" x2="480" y2="70" class="divider"/>
+
+    <!-- Three language types -->
+    <g transform="translate(20, 90)">
+      <!-- Natural -->
+      <rect width="145" height="170" rx="4" fill="#FFF8E8" stroke="#D8C3A5" stroke-width="1.5"/>
+      <rect width="145" height="28" rx="4" fill="#D8C3A5"/>
+      <text x="72" y="19" class="label-bold" text-anchor="middle">Natural Language</text>
+      <text x="72" y="55" class="label" text-anchor="middle">English</text>
+      <text x="72" y="75" class="label" text-anchor="middle">Mandarin</text>
+      <text x="72" y="115" class="label-sm" text-anchor="middle" font-style="italic">教學媒介本身</text>
+      <text x="72" y="150" class="label-sm" text-anchor="middle">EMI / EML 的</text>
+      <text x="72" y="165" class="label-sm" text-anchor="middle">Medium</text>
+
+      <!-- Profession -->
+      <g transform="translate(160, 0)">
+        <rect width="145" height="170" rx="4" fill="#FFF8E8" stroke="#D8C3A5" stroke-width="1.5"/>
+        <rect width="145" height="28" rx="4" fill="#D8C3A5"/>
+        <text x="72" y="19" class="label-bold" text-anchor="middle">Profession Language</text>
+        <text x="72" y="55" class="label" text-anchor="middle">Business</text>
+        <text x="72" y="75" class="label" text-anchor="middle">Management</text>
+        <text x="72" y="115" class="label-sm" text-anchor="middle" font-style="italic">學科內容</text>
+        <text x="72" y="150" class="label-sm" text-anchor="middle">ESP / EAP 的</text>
+        <text x="72" y="165" class="label-sm" text-anchor="middle">Content</text>
+      </g>
+
+      <!-- Programming -->
+      <g transform="translate(320, 0)">
+        <rect width="145" height="170" rx="4" fill="#FFF8E8" stroke="#D8C3A5" stroke-width="1.5"/>
+        <rect width="145" height="28" rx="4" fill="#D8C3A5"/>
+        <text x="72" y="19" class="label-bold" text-anchor="middle">Programming Lang.</text>
+        <text x="72" y="55" class="label" text-anchor="middle">Python</text>
+        <text x="72" y="75" class="label" text-anchor="middle">HTML</text>
+        <text x="72" y="115" class="label-sm" text-anchor="middle" font-style="italic">數位實作工具</text>
+        <text x="72" y="150" class="label-sm" text-anchor="middle">Vibe Coding</text>
+        <text x="72" y="165" class="label-sm" text-anchor="middle">的入口</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ========== ④ GenAI ↔ 四技能 (右區) ========== -->
+  <g transform="translate(580, 310)">
+    <rect width="440" height="280" rx="6" class="card-main"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">③</text>
+    <text x="60" y="35" class="section-title">GenAI ↔ 語言四技能</text>
+    <text x="60" y="55" class="label-sm">Content Generation = 對應 Input / Output 多模態</text>
+    <line x1="20" y1="70" x2="420" y2="70" class="divider"/>
+
+    <!-- GenAI side -->
+    <g transform="translate(20, 90)">
+      <text x="80" y="0" class="label-bold" text-anchor="middle">GenAI 生成</text>
+      <rect y="15" width="160" height="28" rx="4" fill="#E8F0EC" stroke="#004030"/>
+      <text x="80" y="33" class="label-bold" text-anchor="middle">✓ Text</text>
+      <rect y="55" width="160" height="28" rx="4" fill="#E8F0EC" stroke="#004030"/>
+      <text x="80" y="73" class="label-bold" text-anchor="middle">✓ Speech</text>
+      <rect y="95" width="160" height="28" rx="4" fill="#E8F0EC" stroke="#004030"/>
+      <text x="80" y="113" class="label-bold" text-anchor="middle">✓ Image</text>
+      <rect y="135" width="160" height="28" rx="4" fill="#E8F0EC" stroke="#004030"/>
+      <text x="80" y="153" class="label-bold" text-anchor="middle">✓ Video</text>
+    </g>
+
+    <!-- Bidirectional arrows -->
+    <g transform="translate(200, 90)">
+      <path d="M0 29 L60 29" class="arrow" marker-end="url(#arrowhead)" marker-start="url(#arrowhead)"/>
+      <path d="M0 69 L60 69" class="arrow" marker-end="url(#arrowhead)" marker-start="url(#arrowhead)"/>
+      <path d="M0 109 L60 109" class="arrow" marker-end="url(#arrowhead)" marker-start="url(#arrowhead)"/>
+      <path d="M0 149 L60 149" class="arrow" marker-end="url(#arrowhead)" marker-start="url(#arrowhead)"/>
+    </g>
+
+    <!-- Skills side -->
+    <g transform="translate(265, 90)">
+      <text x="75" y="0" class="label-bold" text-anchor="middle">四技能 Skills</text>
+      <rect y="15" width="155" height="28" rx="4" fill="#F2EBDD" stroke="#D8C3A5"/>
+      <text x="77" y="33" class="label" text-anchor="middle">Reading（Input）</text>
+      <rect y="55" width="155" height="28" rx="4" fill="#F2EBDD" stroke="#D8C3A5"/>
+      <text x="77" y="73" class="label" text-anchor="middle">Listening（Input）</text>
+      <rect y="95" width="155" height="28" rx="4" fill="#F2EBDD" stroke="#D8C3A5"/>
+      <text x="77" y="113" class="label" text-anchor="middle">Writing（Output）</text>
+      <rect y="135" width="155" height="28" rx="4" fill="#F2EBDD" stroke="#D8C3A5"/>
+      <text x="77" y="153" class="label" text-anchor="middle">Speaking（Output）</text>
+    </g>
+  </g>
+
+  <!-- ========== ⑤ Tool Layer (右區) ========== -->
+  <g transform="translate(1040, 310)">
+    <rect width="500" height="280" rx="6" class="card-main"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">④</text>
+    <text x="60" y="35" class="section-title">AI Vibe Coding 工具層</text>
+    <text x="60" y="55" class="label-sm">Gemini / Gem / NotebookLM　·　Claude / Skills</text>
+    <line x1="20" y1="70" x2="480" y2="70" class="divider"/>
+
+    <!-- Autonomy spectrum -->
+    <text x="20" y="95" class="label-bold">AI 協作層級（自主性光譜）</text>
+    <g transform="translate(20, 105)">
+      <rect width="140" height="50" rx="4" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="70" y="22" class="label-bold" text-anchor="middle">Assistant</text>
+      <text x="70" y="40" class="label-sm" text-anchor="middle">人主導</text>
+
+      <path d="M145 30 L165 30" class="arrow" marker-end="url(#arrowhead)"/>
+
+      <rect x="170" width="140" height="50" rx="4" fill="#F2EBDD" stroke="#004030" stroke-width="1.5"/>
+      <text x="240" y="22" class="label-bold" text-anchor="middle">Copilot（副駕）</text>
+      <text x="240" y="40" class="label-sm" text-anchor="middle">Semi-Autonomous</text>
+
+      <path d="M315 30 L335 30" class="arrow" marker-end="url(#arrowhead)"/>
+
+      <rect x="340" width="140" height="50" rx="4" class="card-accent"/>
+      <text x="410" y="22" class="label-gold" text-anchor="middle">Agent（代理人）</text>
+      <text x="410" y="40" fill="#FFFFFF" font-size="11" text-anchor="middle">Fully Autonomous</text>
+    </g>
+
+    <!-- Output formats -->
+    <text x="20" y="195" class="label-bold">產出格式</text>
+    <g transform="translate(20, 205)">
+      <rect width="220" height="56" rx="4" fill="#FFF8E8" stroke="#C9A961" stroke-width="1.5"/>
+      <text x="110" y="22" class="label-bold" text-anchor="middle">✓ SVG</text>
+      <text x="110" y="42" class="label-sm" text-anchor="middle">Scalable Vector Graphics</text>
+
+      <rect x="240" width="220" height="56" rx="4" fill="#FFF8E8" stroke="#C9A961" stroke-width="1.5"/>
+      <text x="350" y="22" class="label-bold" text-anchor="middle">✓ HTML / SPA</text>
+      <text x="350" y="42" class="label-sm" text-anchor="middle">Single-Page App = 網頁</text>
+    </g>
+  </g>
+
+  <!-- ========== ⑥ SDL → SDT (左下) ========== -->
+  <g transform="translate(60, 610)">
+    <rect width="720" height="320" rx="6" class="card-main"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">⑤</text>
+    <text x="60" y="35" class="section-title">學習動機支撐鏈：SDL → SDT → Self-Efficacy</text>
+    <text x="60" y="55" class="label-sm">Self-Directed Learning · Self-Determination Theory · Bandura 四來源</text>
+    <line x1="20" y1="70" x2="700" y2="70" class="divider"/>
+
+    <!-- SDL trigger -->
+    <g transform="translate(20, 85)">
+      <rect width="200" height="40" rx="4" class="card-accent"/>
+      <text x="100" y="25" class="label-white" text-anchor="middle">SDL · 自我導向學習</text>
+      <path d="M210 20 L260 20" class="arrow" marker-end="url(#arrowhead)"/>
+      <rect x="265" width="160" height="40" rx="4" class="card-soft"/>
+      <text x="345" y="25" class="label-bold" text-anchor="middle">學習動機 Motivation</text>
+      <path d="M435 20 L490 20" class="arrow" marker-end="url(#arrowhead)"/>
+      <rect x="495" width="180" height="40" rx="4" fill="#FFF8E8" stroke="#C9A961" stroke-width="1.5"/>
+      <text x="585" y="25" class="label-bold" text-anchor="middle">SDT 自我決定理論</text>
+    </g>
+
+    <!-- SDT three elements -->
+    <g transform="translate(20, 145)">
+      <text x="0" y="0" class="label-bold">SDT 三要素：</text>
+
+      <!-- Autonomy -->
+      <rect y="15" width="220" height="60" rx="4" fill="#F2EBDD" stroke="#D8C3A5" stroke-width="1.5"/>
+      <text x="110" y="35" class="label-bold" text-anchor="middle">① Autonomy 自主</text>
+      <text x="110" y="55" class="label-sm" text-anchor="middle">選修 ≠ 必修</text>
+      <text x="110" y="70" class="label-sm" text-anchor="middle">Progress / Pace 個別化</text>
+
+      <!-- Competency -->
+      <rect x="240" y="15" width="220" height="60" rx="4" fill="#FFF8E8" stroke="#C9A961" stroke-width="2"/>
+      <text x="350" y="35" class="label-bold" text-anchor="middle">② Competency 勝任</text>
+      <text x="350" y="55" class="label-sm" text-anchor="middle">⇣ Self-Efficacy</text>
+      <text x="350" y="70" class="label-sm" text-anchor="middle" font-style="italic">最可被教學介入</text>
+
+      <!-- Relatedness -->
+      <rect x="480" y="15" width="220" height="60" rx="4" fill="#F2EBDD" stroke="#D8C3A5" stroke-width="1.5"/>
+      <text x="590" y="35" class="label-bold" text-anchor="middle">③ Relatedness 關聯</text>
+      <text x="590" y="55" class="label-sm" text-anchor="middle">小組學習</text>
+      <text x="590" y="70" class="label-sm" text-anchor="middle">社群歸屬</text>
+    </g>
+
+    <!-- Self-Efficacy four sources -->
+    <g transform="translate(20, 240)">
+      <text x="0" y="0" class="label-bold">Self-Efficacy 四項來源（Bandura）：</text>
+      <rect y="10" width="170" height="60" rx="4" class="card-accent"/>
+      <text x="85" y="30" class="label-gold" text-anchor="middle">✓ Mastery Exp.</text>
+      <text x="85" y="48" fill="#FFFFFF" font-size="10" text-anchor="middle">精熟經驗</text>
+      <text x="85" y="62" fill="#FFFFFF" font-size="9" text-anchor="middle" font-style="italic">最強來源</text>
+
+      <rect x="180" y="10" width="170" height="60" rx="4" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="265" y="30" class="label-bold" text-anchor="middle">Vicarious Exp.</text>
+      <text x="265" y="48" class="label-sm" text-anchor="middle">替代經驗</text>
+
+      <rect x="360" y="10" width="170" height="60" rx="4" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="445" y="30" class="label-bold" text-anchor="middle">Verbal Persuasion</text>
+      <text x="445" y="48" class="label-sm" text-anchor="middle">言語說服</text>
+
+      <rect x="540" y="10" width="160" height="60" rx="4" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="620" y="30" class="label-bold" text-anchor="middle">Psy. Status</text>
+      <text x="620" y="48" class="label-sm" text-anchor="middle">心理／生理狀態</text>
+    </g>
+  </g>
+
+  <!-- ========== ⑦ Assessment (右下) ========== -->
+  <g transform="translate(800, 610)">
+    <rect width="370" height="320" rx="6" class="card-main"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">⑥</text>
+    <text x="60" y="35" class="section-title">評量機制 Assessment</text>
+    <text x="60" y="55" class="label-sm">形成性 + 經常性 · 累積自我效能感的引擎</text>
+    <line x1="20" y1="70" x2="350" y2="70" class="divider"/>
+
+    <g transform="translate(20, 90)">
+      <rect width="330" height="40" rx="4" class="card-soft"/>
+      <text x="165" y="25" class="label-bold" text-anchor="middle">Formative Assessment 形成性測驗</text>
+
+      <rect y="50" width="330" height="40" rx="4" class="card-soft"/>
+      <text x="165" y="75" class="label-bold" text-anchor="middle">經常性／持續性測驗</text>
+
+      <!-- Feedback loop -->
+      <g transform="translate(0, 110)">
+        <text x="165" y="15" class="label-bold" text-anchor="middle">回饋循環</text>
+        <rect y="25" width="150" height="36" rx="4" fill="#FFF8E8" stroke="#C9A961"/>
+        <text x="75" y="48" class="label-sm" text-anchor="middle">小成功累積</text>
+
+        <path d="M155 43 L185 43" class="arrow" marker-end="url(#arrowhead)"/>
+
+        <rect x="180" y="25" width="150" height="36" rx="4" class="card-accent"/>
+        <text x="255" y="48" class="label-gold" text-anchor="middle">Mastery Experience</text>
+
+        <path d="M255 65 L255 80" class="arrow" marker-end="url(#arrowhead)"/>
+
+        <rect x="90" y="80" width="150" height="36" rx="4" fill="#FFF8E8" stroke="#C9A961"/>
+        <text x="165" y="103" class="label-bold" text-anchor="middle">Self-Efficacy ↑</text>
+
+        <path d="M85 98 Q40 98 40 60" class="arrow-soft" fill="none" marker-end="url(#arrowhead-soft)"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ========== ⑧ Foreign Students Integration (右下角) ========== -->
+  <g transform="translate(1190, 610)">
+    <rect width="350" height="320" rx="6" class="card-highlight"/>
+    <circle cx="30" cy="30" r="14" class="num-circle"/>
+    <text x="30" y="34" class="num-text">⑦</text>
+    <text x="60" y="35" class="section-title">外籍生融入</text>
+    <text x="60" y="55" class="label-sm">Foreign Students Integration</text>
+    <line x1="20" y1="70" x2="330" y2="70" class="divider"/>
+
+    <g transform="translate(20, 90)">
+      <!-- ESP -->
+      <rect width="310" height="50" rx="4" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="20" y="22" class="label-bold">ESP</text>
+      <text x="155" y="22" class="label" text-anchor="middle">English for Specific Purposes</text>
+      <text x="155" y="40" class="label-sm" text-anchor="middle">特定領域英文（商管、工程…）</text>
+
+      <!-- EAP -->
+      <rect y="60" width="310" height="50" rx="4" fill="#FFFFFF" stroke="#004030" stroke-width="1.5"/>
+      <text x="20" y="82" class="label-bold">EAP</text>
+      <text x="155" y="82" class="label" text-anchor="middle">English for Academic Purposes</text>
+      <text x="155" y="100" class="label-sm" text-anchor="middle">學術英文（寫作、簡報、研究）</text>
+
+      <!-- Arrow down -->
+      <path d="M155 115 L155 130" class="arrow" marker-end="url(#arrowhead)"/>
+
+      <!-- MSAP - Highlighted -->
+      <rect y="135" width="310" height="80" rx="4" class="card-accent"/>
+      <text x="20" y="160" class="label-gold" font-size="18">⭐ MSAP</text>
+      <text x="155" y="160" class="label-gold" text-anchor="middle">Mandarin SP / AP</text>
+      <text x="155" y="185" fill="#FFFFFF" font-size="12" text-anchor="middle">華語版的 ESP + EAP</text>
+      <text x="155" y="205" fill="#D8C3A5" font-size="11" text-anchor="middle" font-style="italic">— 駱老師原創貢獻 · 重要！</text>
+    </g>
+  </g>
+
+  <!-- ========== CENTRAL CONNECTIONS (虛線連接) ========== -->
+  <!-- Learning by Doing → SDL -->
+  <path d="M800 280 L800 580 L420 580 L420 610" class="arrow-soft" marker-end="url(#arrowhead-soft)"/>
+  <!-- Learning by Doing → Language Expansion -->
+  <path d="M700 280 L700 295 L310 295 L310 310" class="arrow-soft" marker-end="url(#arrowhead-soft)"/>
+  <!-- Learning by Doing → GenAI -->
+  <path d="M800 280 L800 310" class="arrow-soft" marker-end="url(#arrowhead-soft)"/>
+  <!-- Learning by Doing → Tool Layer -->
+  <path d="M900 280 L900 295 L1290 295 L1290 310" class="arrow-soft" marker-end="url(#arrowhead-soft)"/>
+
+  <!-- ========== FOOTER / LEGEND ========== -->
+  <g transform="translate(60, 960)">
+    <line x1="0" y1="0" x2="1480" y2="0" class="divider"/>
+    <text x="0" y="25" class="section-title">🔑 核心洞察 Key Insights</text>
+
+    <g transform="translate(0, 40)">
+      <rect width="14" height="14" rx="2" class="card-accent"/>
+      <text x="22" y="12" class="label-sm" font-weight="700">洞察 1</text>
+      <text x="22" y="28" class="label-sm">EML 中的 "Language" 涵蓋三類：Natural · Profession · Programming，均可由 GenAI 處理</text>
+    </g>
+
+    <g transform="translate(500, 40)">
+      <rect width="14" height="14" rx="2" class="card-accent"/>
+      <text x="22" y="12" class="label-sm" font-weight="700">洞察 2</text>
+      <text x="22" y="28" class="label-sm">SDT 三要素中，Competency 透過 Self-Efficacy 是最可被教學設計直接介入的環節</text>
+    </g>
+
+    <g transform="translate(1000, 40)">
+      <rect width="14" height="14" rx="2" class="card-accent"/>
+      <text x="22" y="12" class="label-sm" font-weight="700">洞察 3</text>
+      <text x="22" y="28" class="label-sm">MSAP 是對 ESP/EAP 的對等延伸，補上外籍生在華語環境中的學科支援缺口</text>
+    </g>
+
+    <g transform="translate(0, 80)">
+      <text x="0" y="0" class="label-sm" font-style="italic" fill="#6B6B6B">圖例：</text>
+      <line x1="40" y1="-4" x2="80" y2="-4" class="arrow"/>
+      <text x="86" y="0" class="label-sm">主要因果關係　　</text>
+      <line x1="190" y1="-4" x2="230" y2="-4" class="arrow-soft"/>
+      <text x="236" y="0" class="label-sm">跨主軸關聯　　</text>
+      <rect x="340" y="-12" width="14" height="14" rx="2" class="card-accent"/>
+      <text x="362" y="0" class="label-sm">強調區塊　　</text>
+      <rect x="450" y="-12" width="14" height="14" rx="2" fill="#FFF8E8" stroke="#C9A961"/>
+      <text x="472" y="0" class="label-sm">關鍵概念</text>
+    </g>
+
+    <text x="1480" y="100" class="label-sm" text-anchor="end" fill="#8A8A8A" font-style="italic">© 2026 駱世民 · 國立暨南國際大學 · 國際企業學系</text>
+  </g>
+</svg>
+`;
+
+/* ============ Overview 系統架構圖（原始雙語 SVG，固定不隨語言切換）============ */
+const OverviewDiagram = ({ lang }) => {
+  const openFullSize = () => {
+    const blob = new Blob([OVERVIEW_SVG_RAW], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+  const safeSVG = DOMPurify.sanitize(OVERVIEW_SVG_RAW, { USE_PROFILES: { svg: true, svgFilters: true } });
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 className="font-serif font-black text-xl text-[#004030] dark:text-[#D8C3A5]">
+          📐 {lang === 'zh' ? '系統性架構總覽' : 'System Architecture Overview'}
+        </h3>
+        <button onClick={openFullSize}
+          className="px-3 py-1.5 text-xs font-bold bg-[#004030] dark:bg-[#D8C3A5] text-white dark:text-[#004030] rounded-lg hover:opacity-90 flex items-center gap-1">
+          🔍 {lang === 'zh' ? '另開放大檢視' : 'Open Full Size'}
+        </button>
+      </div>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+        {lang === 'zh'
+          ? '本圖呈現七大架構區塊與跨主軸關聯，點擊右上角按鈕可於新分頁開啟原尺寸圖，支援自由縮放檢視。'
+          : 'This diagram maps all seven architecture blocks and their cross-axis relations. Click the button above to open the full-size version in a new tab for free zooming.'}
+      </p>
+      <div
+        className="w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 cursor-zoom-in bg-[#FAF7F2]"
+        onClick={openFullSize}
+        onContextMenu={e => { e.preventDefault(); showCopyrightToast(lang); }}
+        dangerouslySetInnerHTML={{ __html: safeSVG }}
+      />
+    </div>
+  );
+};
+
+
+
 
 /* ============ App 主程式 ============ */
 function App() {
@@ -1602,6 +2028,9 @@ const ModuleRouter = ({
           <h3 className="font-serif font-black text-xl text-[#004030] dark:text-[#D8C3A5] mb-3">{t.m0_why}</h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{t.m0_why_desc}</p>
         </div>
+
+        {/* 系統性架構總覽 */}
+        <OverviewDiagram lang={lang}/>
 
         {/* 6 模組預覽 */}
         <div>
